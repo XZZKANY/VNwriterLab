@@ -16,7 +16,14 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <ProjectHomePage />,
+        element: (
+          <>
+            <ProjectHomePage />
+            <footer style={{ marginTop: "24px", color: "#6b7280" }}>
+              当前版本：V1 桌面创作闭环验证版
+            </footer>
+          </>
+        ),
       },
       {
         path: "editor",
