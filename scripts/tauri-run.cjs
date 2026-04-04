@@ -10,9 +10,29 @@ const tauriCli = path.join(
   "cli",
   "tauri.js",
 );
+const tauriArgs = process.argv.slice(2);
+const tauriCommand = tauriArgs[0];
+const devBinaryPath = path.join(
+  process.cwd(),
+  "src-tauri",
+  "target",
+  "debug",
+  "vn-writer-lab.exe",
+);
 
 function killStaleExe() {
-  spawnSync("taskkill", ["/F", "/IM", "vn-writer-lab.exe", "/T"], {
+  if (tauriCommand !== "dev") {
+    return;
+  }
+
+  const powerShellScript = `
+$targetPath = ${JSON.stringify(devBinaryPath)};
+Get-CimInstance Win32_Process -Filter "Name='vn-writer-lab.exe'" |
+  Where-Object { $_.ExecutablePath -eq $targetPath } |
+  ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
+`;
+
+  spawnSync("powershell.exe", ["-NoProfile", "-Command", powerShellScript], {
     stdio: "ignore",
     windowsHide: true,
   });
@@ -25,7 +45,7 @@ const env = {
   PATH: `${cargoBin}${path.delimiter}${process.env.PATH ?? ""}`,
 };
 
-const child = spawn(process.execPath, [tauriCli, ...process.argv.slice(2)], {
+const child = spawn(process.execPath, [tauriCli, ...tauriArgs], {
   stdio: "inherit",
   env,
 });
