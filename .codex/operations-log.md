@@ -45,3 +45,25 @@
 - `npm run test -- AppShell.test.tsx`：通过
 - `npm run build`：通过
 - `npm run tauri dev`：通过启动前端与原生壳链路，进入运行态
+
+## 规格修复 - Task 1 偏差收敛
+
+时间：2026-04-04  
+
+### 修复内容
+
+- 将 `npm run tauri` 改为本地 Node 包装脚本，显式补充 `.cargo/bin` PATH，并直接调用本地 `@tauri-apps/cli/tauri.js`，确保在当前工作树里可复现执行
+- Rust 侧移除未请求的 `greet` 命令与 `tauri-plugin-opener` 初始化，改为注册 `tauri-plugin-sql`（sqlite 特性）
+- `src-tauri/capabilities/default.json` 删除 `opener:default` 权限
+- `package.json` 删除未请求的 `preview` 脚本与 opener 前端依赖
+- 修正首页默认文案为明确的中文欢迎语
+
+### 验证结果
+
+- `npm run test -- AppShell.test.tsx`：通过
+- `npm run tauri dev`：通过进入前端与 Rust 启动链路，`beforeDevCommand` 和 `DevCommand` 均执行成功，最终进入等待态
+
+### 备注
+
+- 调试过程中多次遇到 1420 端口残留占用，已通过清理残留进程后重新验证
+- 当前实现不扩展 Task 1 之外的业务功能，仅收敛脚手架与基础插件接入
