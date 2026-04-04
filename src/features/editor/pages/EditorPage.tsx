@@ -1,3 +1,4 @@
+import { AutoSaveStatus } from "../../../app/components/AutoSaveStatus";
 import { SceneBlockList } from "../components/SceneBlockList";
 import { SceneTree } from "../components/SceneTree";
 import { useEditorStore } from "../store/useEditorStore";
@@ -14,6 +15,7 @@ export function EditorPage() {
   return (
     <section>
       <h2>剧情编辑</h2>
+      <AutoSaveStatus />
       <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 16 }}>
         <SceneTree scenes={scenes} onCreateScene={createScene} />
         <div>

@@ -1,3 +1,4 @@
+import { AutoSaveStatus } from "../../../app/components/AutoSaveStatus";
 import { ProjectCreateForm } from "../components/ProjectCreateForm";
 import { useProjectStore } from "../store/useProjectStore";
 
@@ -8,6 +9,7 @@ export function ProjectHomePage() {
   return (
     <section>
       <h2>项目首页</h2>
+      <AutoSaveStatus />
       {!currentProject ? (
         <ProjectCreateForm onSubmit={createProject} />
       ) : (

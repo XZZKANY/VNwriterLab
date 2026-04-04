@@ -1,11 +1,51 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 interface AutoSaveState {
   lastSavedAt: string | null;
-  markSaved: () => void;
+  hasPendingChanges: boolean;
+  hasHydrated: boolean;
+  hasRestoredDraft: boolean;
+  markDirty: () => void;
+  markSaved: (savedAt?: string) => void;
+  markHydrated: (restored?: boolean) => void;
+  reset: () => void;
 }
 
-export const useAutoSaveStore = create<AutoSaveState>((set) => ({
+export const AUTO_SAVE_STORAGE_KEY = "vn-writer-lab.autosave-store";
+
+const initialState = {
   lastSavedAt: null,
-  markSaved: () => set({ lastSavedAt: new Date().toISOString() }),
-}));
+  hasPendingChanges: false,
+  hasHydrated: false,
+  hasRestoredDraft: false,
+};
+
+export const useAutoSaveStore = create<AutoSaveState>()(
+  persist(
+    (set) => ({
+      ...initialState,
+      markDirty: () => set({ hasPendingChanges: true }),
+      markSaved: (savedAt) =>
+        set({
+          lastSavedAt: savedAt ?? new Date().toISOString(),
+          hasPendingChanges: false,
+        }),
+      markHydrated: (restored = false) =>
+        set((state) => ({
+          hasHydrated: true,
+          hasRestoredDraft: state.hasRestoredDraft || restored,
+        })),
+      reset: () => set(initialState),
+    }),
+    {
+      name: AUTO_SAVE_STORAGE_KEY,
+      partialize: (state) => ({
+        lastSavedAt: state.lastSavedAt,
+      }),
+      onRehydrateStorage: () => (state) => {
+        state?.markHydrated();
+      },
+    },
+  ),
+);
