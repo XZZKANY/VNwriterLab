@@ -26,6 +26,12 @@ export function EditorPage() {
           <button type="button" onClick={() => addBlock("note")}>
             新增注释
           </button>
+          <button type="button" onClick={() => addBlock("choice")}>
+            新增选项
+          </button>
+          <button type="button" onClick={() => addBlock("condition")}>
+            新增条件
+          </button>
           {selectedScene ? (
             <SceneBlockList blocks={selectedScene.blocks} />
           ) : (

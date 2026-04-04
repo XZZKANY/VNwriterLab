@@ -1,10 +1,14 @@
 import { create } from "zustand";
 import type { SceneBlock } from "../../../lib/domain/block";
 import type { Scene } from "../../../lib/domain/scene";
+import type { ProjectVariable } from "../../../lib/domain/variable";
+import type { SceneLink } from "./linkUtils";
 
 interface EditorState {
   scenes: Scene[];
   selectedSceneId: string | null;
+  links: SceneLink[];
+  variables: ProjectVariable[];
   createScene: () => void;
   addBlock: (blockType: SceneBlock["blockType"]) => void;
 }
@@ -12,6 +16,8 @@ interface EditorState {
 export const useEditorStore = create<EditorState>((set, get) => ({
   scenes: [],
   selectedSceneId: null,
+  links: [],
+  variables: [],
   createScene: () => {
     const nextIndex = get().scenes.length + 1;
     const sceneId = crypto.randomUUID();
