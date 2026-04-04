@@ -1,6 +1,7 @@
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { AppShell } from "./app/layouts/AppShell";
+import { EditorPage } from "./features/editor/pages/EditorPage";
 import { ProjectHomePage } from "./features/projects/pages/ProjectHomePage";
 import "./styles.css";
 
@@ -12,6 +13,10 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <ProjectHomePage />,
+      },
+      {
+        path: "editor",
+        element: <EditorPage />,
       },
     ],
   },
