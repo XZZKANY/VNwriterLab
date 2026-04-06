@@ -77,6 +77,14 @@ describe("ProjectHomePage", () => {
     expect(screen.getByText("场景总数：3")).toBeInTheDocument();
     expect(screen.getByText("结局场景数：2")).toBeInTheDocument();
     expect(screen.getByText("开场")).toBeInTheDocument();
+    expect(useEditorStore.getState().scenes.map((scene) => scene.title)).toEqual([
+      "开场",
+      "普通结局",
+      "真结局",
+    ]);
+    expect(useEditorStore.getState().selectedSceneId).toBe(
+      useEditorStore.getState().scenes[0]?.id ?? null,
+    );
   });
 
   it("创建项目后显示自动保存状态", async () => {

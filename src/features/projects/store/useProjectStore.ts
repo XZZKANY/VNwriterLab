@@ -268,9 +268,18 @@ export const useProjectStore = create<ProjectState>()(
       ...initialState,
       createProject: (name, summary, template) => {
         useAutoSaveStore.getState().markDirty();
+        const nextProject = createEmptyProject(name, summary, template);
 
         set({
-          currentProject: createEmptyProject(name, summary, template),
+          currentProject: nextProject,
+        });
+
+        useEditorStore.setState({
+          scenes: nextProject.scenes,
+          selectedSceneId: nextProject.scenes[0]?.id ?? null,
+          links: [],
+          variables: [],
+          selectedVariableId: null,
         });
 
         useAutoSaveStore.getState().markSaved();
