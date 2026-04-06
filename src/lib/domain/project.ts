@@ -18,6 +18,45 @@ export interface Project {
   scenes: Scene[];
 }
 
+export function createRoute(input: {
+  projectId: string;
+  name: string;
+  sortOrder: number;
+}): Route {
+  return {
+    id: crypto.randomUUID(),
+    projectId: input.projectId,
+    name: input.name,
+    routeType: "character",
+    description: `${input.name}的路线`,
+    sortOrder: input.sortOrder,
+  };
+}
+
+export function createSceneInRoute(input: {
+  projectId: string;
+  routeId: string;
+  sortOrder: number;
+}): Scene {
+  const nextIndex = input.sortOrder + 1;
+
+  return {
+    id: crypto.randomUUID(),
+    projectId: input.projectId,
+    routeId: input.routeId,
+    title: `未命名场景 ${nextIndex}`,
+    summary: "",
+    sceneType: "normal",
+    status: "draft",
+    chapterLabel: "",
+    sortOrder: input.sortOrder,
+    isStartScene: input.sortOrder === 0,
+    isEndingScene: false,
+    notes: "",
+    blocks: [],
+  };
+}
+
 export function createEmptyProject(name: string, summary: string): Project {
   const projectId = crypto.randomUUID();
   const routeId = crypto.randomUUID();
