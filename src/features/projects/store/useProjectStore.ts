@@ -6,6 +6,7 @@ import {
   createRoute as createProjectRoute,
   createSceneInRoute as createProjectSceneInRoute,
   type Project,
+  type ProjectTemplate,
   type Route,
 } from "../../../lib/domain/project";
 import type { Scene } from "../../../lib/domain/scene";
@@ -14,7 +15,11 @@ import { useAutoSaveStore } from "../../../lib/store/useAutoSaveStore";
 
 interface ProjectState {
   currentProject: Project | null;
-  createProject: (name: string, summary: string) => void;
+  createProject: (
+    name: string,
+    summary: string,
+    template?: ProjectTemplate,
+  ) => void;
   createRoute: (name: string) => void;
   renameRoute: (routeId: string, name: string) => void;
   createSceneInRoute: (routeId: string) => Scene | null;
@@ -261,11 +266,11 @@ export const useProjectStore = create<ProjectState>()(
   persist(
     (set, get) => ({
       ...initialState,
-      createProject: (name, summary) => {
+      createProject: (name, summary, template) => {
         useAutoSaveStore.getState().markDirty();
 
         set({
-          currentProject: createEmptyProject(name, summary),
+          currentProject: createEmptyProject(name, summary, template),
         });
 
         useAutoSaveStore.getState().markSaved();

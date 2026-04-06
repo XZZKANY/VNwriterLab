@@ -601,7 +601,7 @@ describe("buildSceneGraph", () => {
       ],
     );
 
-    expect(graph.issueSummaries).toHaveLength(2);
+    expect(graph.issueSummaries).toHaveLength(3);
     expect(graph.issueSummaries).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -611,6 +611,12 @@ describe("buildSceneGraph", () => {
             "条件块引用了已删除变量",
             "条件块未选择变量",
           ],
+        }),
+        expect.objectContaining({
+          sceneId: "r1-s2",
+          sceneTitle: "问题节点",
+          categories: ["空场景"],
+          issues: ["当前场景还没有任何内容块"],
         }),
         expect.objectContaining({
           sceneId: "r2-s1",
@@ -634,6 +640,11 @@ describe("buildSceneGraph", () => {
       expect.objectContaining({
         sceneId: "r1-s1",
         issues: ["条件块引用了已删除变量", "条件块未选择变量"],
+      }),
+      expect.objectContaining({
+        sceneId: "r1-s2",
+        categories: ["空场景"],
+        issues: ["当前场景还没有任何内容块"],
       }),
     ]);
   });

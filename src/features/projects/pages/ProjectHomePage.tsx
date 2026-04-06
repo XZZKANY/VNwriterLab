@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AutoSaveStatus } from "../../../app/components/AutoSaveStatus";
 import { useCharacterStore } from "../../characters/store/useCharacterStore";
 import { useEditorStore } from "../../editor/store/useEditorStore";
@@ -8,7 +9,14 @@ import { searchProjectContent } from "../lib/projectSearch";
 import { buildProjectStats } from "../lib/projectStats";
 import { useProjectStore } from "../store/useProjectStore";
 
+const sceneStatusLabelMap = {
+  draft: "草稿",
+  completed: "已完成",
+  needs_revision: "需修改",
+} as const;
+
 export function ProjectHomePage() {
+  const navigate = useNavigate();
   const [routeName, setRouteName] = useState("");
   const [routeDrafts, setRouteDrafts] = useState<Record<string, string>>({});
   const [searchKeyword, setSearchKeyword] = useState("");
@@ -17,6 +25,8 @@ export function ProjectHomePage() {
   const createRoute = useProjectStore((state) => state.createRoute);
   const renameRoute = useProjectStore((state) => state.renameRoute);
   const editorScenes = useEditorStore((state) => state.scenes);
+  const selectedSceneId = useEditorStore((state) => state.selectedSceneId);
+  const selectScene = useEditorStore((state) => state.selectScene);
   const links = useEditorStore((state) => state.links);
   const variables = useEditorStore((state) => state.variables);
   const characters = useCharacterStore((state) => state.characters);
@@ -37,6 +47,7 @@ export function ProjectHomePage() {
         .length ?? 0,
     ]),
   );
+
   const projectStats = currentProject
     ? buildProjectStats({
         project: currentProject,
@@ -47,6 +58,31 @@ export function ProjectHomePage() {
         loreEntries,
       })
     : null;
+
+  const mergedSceneMap = new Map(
+    (currentProject?.scenes ?? []).map((scene) => [scene.id, scene] as const),
+  );
+  editorScenes
+    .filter((scene) => scene.projectId === currentProject?.id)
+    .forEach((scene) => {
+      mergedSceneMap.set(scene.id, scene);
+    });
+
+  const availableScenes = [...mergedSceneMap.values()].sort((left, right) => {
+    if (left.sortOrder !== right.sortOrder) {
+      return left.sortOrder - right.sortOrder;
+    }
+
+    return left.title.localeCompare(right.title, "zh-CN");
+  });
+
+  const continueScene =
+    availableScenes.find((scene) => scene.id === selectedSceneId) ??
+    availableScenes[0] ??
+    null;
+  const continueRoute =
+    sortedRoutes.find((route) => route.id === continueScene?.routeId) ?? null;
+
   const searchResults =
     currentProject && searchKeyword.trim()
       ? searchProjectContent(searchKeyword, {
@@ -56,12 +92,38 @@ export function ProjectHomePage() {
           loreEntries,
         })
       : null;
+
   const hasSearchResults = Boolean(
     searchResults &&
       (searchResults.sceneResults.length > 0 ||
         searchResults.characterResults.length > 0 ||
         searchResults.loreResults.length > 0),
   );
+
+  function handleContinueWriting() {
+    if (!continueScene) {
+      return;
+    }
+
+    selectScene(continueScene.id);
+    navigate("/editor");
+  }
+
+  function handleOpenGraph() {
+    if (continueScene) {
+      selectScene(continueScene.id);
+    }
+
+    navigate("/graph");
+  }
+
+  function handleStartPreview() {
+    if (continueScene) {
+      selectScene(continueScene.id);
+    }
+
+    navigate("/preview");
+  }
 
   return (
     <section>
@@ -88,6 +150,32 @@ export function ProjectHomePage() {
               </ul>
             </section>
           ) : null}
+          <section aria-label="最近编辑">
+            <h4>最近编辑</h4>
+            {continueScene ? (
+              <div>
+                <p>
+                  <strong>{continueScene.title}</strong>
+                </p>
+                <p>所属路线：{continueRoute?.name ?? "未分配路线"}</p>
+                <p>当前状态：{sceneStatusLabelMap[continueScene.status]}</p>
+                <p>{continueScene.summary.trim() || "当前场景还没有摘要。"}</p>
+                <div>
+                  <button type="button" onClick={handleContinueWriting}>
+                    继续写作
+                  </button>
+                  <button type="button" onClick={handleOpenGraph}>
+                    打开分支图
+                  </button>
+                  <button type="button" onClick={handleStartPreview}>
+                    从头预览
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p>暂无可继续创作的场景。</p>
+            )}
+          </section>
           <ul aria-label="项目路线列表">
             {sortedRoutes.map((route) => {
               const draftValue = routeDrafts[route.id] ?? route.name;
@@ -140,9 +228,9 @@ export function ProjectHomePage() {
               createRoute(routeName);
               setRouteName("");
             }}
-            >
-              新增路线
-            </button>
+          >
+            新增路线
+          </button>
           <section aria-label="项目全局搜索">
             <h4>项目全局搜索</h4>
             <label>

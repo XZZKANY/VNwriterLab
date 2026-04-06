@@ -1,12 +1,27 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, vi } from "vitest";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { useCharacterStore } from "../../characters/store/useCharacterStore";
 import { useEditorStore } from "../../editor/store/useEditorStore";
 import { useLoreStore } from "../../lore/store/useLoreStore";
 import { useAutoSaveStore } from "../../../lib/store/useAutoSaveStore";
 import { useProjectStore } from "../store/useProjectStore";
 import { ProjectHomePage } from "./ProjectHomePage";
+
+function EditorSelectionProbe() {
+  const selectedSceneId = useEditorStore((state) => state.selectedSceneId);
+
+  return <div>编辑器场景：{selectedSceneId ?? "未选择"}</div>;
+}
+
+function PreviewProbe() {
+  return <div>预览页</div>;
+}
+
+function GraphProbe() {
+  return <div>分支图页</div>;
+}
 
 describe("ProjectHomePage", () => {
   beforeEach(() => {
@@ -19,10 +34,25 @@ describe("ProjectHomePage", () => {
     cleanup();
   });
 
+  function renderProjectHomePageWithRoutes(
+    homeElement: React.ReactElement = <ProjectHomePage />,
+  ) {
+    return render(
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route path="/" element={homeElement} />
+          <Route path="/editor" element={<EditorSelectionProbe />} />
+          <Route path="/preview" element={<PreviewProbe />} />
+          <Route path="/graph" element={<GraphProbe />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+  }
+
   it("允许创建新项目并显示项目简介", async () => {
     const user = userEvent.setup();
 
-    render(<ProjectHomePage />);
+    renderProjectHomePageWithRoutes();
 
     await user.type(screen.getByLabelText("项目名称"), "雨夜回响");
     await user.type(screen.getByLabelText("一句话简介"), "一段校园悬疑故事");
@@ -32,10 +62,27 @@ describe("ProjectHomePage", () => {
     expect(screen.getByText("一段校园悬疑故事")).toBeInTheDocument();
   });
 
+  it("允许创建项目时选择模板并初始化对应结构", async () => {
+    const user = userEvent.setup();
+
+    renderProjectHomePageWithRoutes();
+
+    await user.type(screen.getByLabelText("项目名称"), "雨夜回响");
+    await user.type(screen.getByLabelText("一句话简介"), "一段校园悬疑故事");
+    await user.selectOptions(screen.getByLabelText("项目模板"), "multi_ending");
+    await user.click(screen.getByRole("button", { name: "创建项目" }));
+
+    expect(screen.getByText("主线")).toBeInTheDocument();
+    expect(screen.getByText("场景数：3")).toBeInTheDocument();
+    expect(screen.getByText("场景总数：3")).toBeInTheDocument();
+    expect(screen.getByText("结局场景数：2")).toBeInTheDocument();
+    expect(screen.getByText("开场")).toBeInTheDocument();
+  });
+
   it("创建项目后显示自动保存状态", async () => {
     const user = userEvent.setup();
 
-    render(<ProjectHomePage />);
+    renderProjectHomePageWithRoutes();
 
     await user.type(screen.getByLabelText("项目名称"), "雨夜回响");
     await user.type(screen.getByLabelText("一句话简介"), "一段校园悬疑故事");
@@ -47,7 +94,7 @@ describe("ProjectHomePage", () => {
   it("创建项目后显示默认共通线并支持新增路线", async () => {
     const user = userEvent.setup();
 
-    render(<ProjectHomePage />);
+    renderProjectHomePageWithRoutes();
 
     await user.type(screen.getByLabelText("项目名称"), "雨夜回响");
     await user.type(screen.getByLabelText("一句话简介"), "一段校园悬疑故事");
@@ -71,7 +118,7 @@ describe("ProjectHomePage", () => {
 
     const { ProjectHomePage: ReloadedProjectHomePage } = await import("./ProjectHomePage");
 
-    render(<ReloadedProjectHomePage />);
+    renderProjectHomePageWithRoutes(<ReloadedProjectHomePage />);
 
     expect(screen.getByText("雨夜回响")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("已恢复本地草稿");
@@ -91,7 +138,7 @@ describe("ProjectHomePage", () => {
 
     useProjectStore.getState().createSceneInRoute(secondRouteId);
 
-    render(<ProjectHomePage />);
+    renderProjectHomePageWithRoutes();
 
     expect(screen.getByText("共通线")).toBeInTheDocument();
     expect(screen.getByText("林夏线")).toBeInTheDocument();
@@ -103,7 +150,7 @@ describe("ProjectHomePage", () => {
 
     useProjectStore.getState().createProject("雨夜回响", "一段校园悬疑故事");
 
-    render(<ProjectHomePage />);
+    renderProjectHomePageWithRoutes();
 
     await user.clear(screen.getByLabelText("路线名称"));
     await user.type(screen.getByLabelText("路线名称"), "主线");
@@ -172,7 +219,7 @@ describe("ProjectHomePage", () => {
       selectedLoreId: "l1",
     });
 
-    render(<ProjectHomePage />);
+    renderProjectHomePageWithRoutes();
 
     expect(screen.getByRole("heading", { name: "项目统计" })).toBeInTheDocument();
     expect(screen.getByText("路线数：1")).toBeInTheDocument();
@@ -181,7 +228,7 @@ describe("ProjectHomePage", () => {
     expect(screen.getByText("变量数：1")).toBeInTheDocument();
     expect(screen.getByText("角色数：1")).toBeInTheDocument();
     expect(screen.getByText("设定数：1")).toBeInTheDocument();
-    expect(screen.getByText("问题场景数：0")).toBeInTheDocument();
+    expect(screen.getByText("问题场景数：1")).toBeInTheDocument();
   });
 
   it("允许在项目首页执行全局搜索并按类别展示结果", async () => {
@@ -277,7 +324,7 @@ describe("ProjectHomePage", () => {
       selectedLoreId: "l1",
     });
 
-    render(<ProjectHomePage />);
+    renderProjectHomePageWithRoutes();
 
     await user.type(screen.getByLabelText("搜索关键词"), "旧校舍");
 
@@ -285,7 +332,9 @@ describe("ProjectHomePage", () => {
     expect(screen.getByRole("heading", { name: "场景" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "角色" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "设定" })).toBeInTheDocument();
-    expect(screen.getByText("旧校舍入口")).toBeInTheDocument();
+    expect(
+      within(screen.getByLabelText("场景搜索结果")).getByText("旧校舍入口"),
+    ).toBeInTheDocument();
     expect(screen.getByText("林夏")).toBeInTheDocument();
     expect(screen.getAllByText("旧校舍")[0]).toBeInTheDocument();
   });
@@ -295,10 +344,136 @@ describe("ProjectHomePage", () => {
 
     useProjectStore.getState().createProject("雨夜回响", "一段校园悬疑故事");
 
-    render(<ProjectHomePage />);
+    renderProjectHomePageWithRoutes();
 
     await user.type(screen.getByLabelText("搜索关键词"), "不存在的关键词");
 
     expect(screen.getByText("未找到匹配内容。")).toBeInTheDocument();
+  });
+
+  it("会展示最近编辑场景并提供继续创作入口", async () => {
+    const user = userEvent.setup();
+
+    useProjectStore.getState().createProject("雨夜回响", "一段校园悬疑故事");
+    const currentProject = useProjectStore.getState().currentProject!;
+    const routeId = currentProject.routes[0]!.id;
+    const scene = {
+      id: "s1",
+      projectId: currentProject.id,
+      routeId,
+      title: "旧校舍入口",
+      summary: "林夏决定独自进入旧校舍。",
+      sceneType: "normal" as const,
+      status: "needs_revision" as const,
+      chapterLabel: "",
+      sortOrder: 0,
+      isStartScene: true,
+      isEndingScene: false,
+      notes: "",
+      blocks: [
+        {
+          id: "b1",
+          sceneId: "s1",
+          blockType: "narration" as const,
+          sortOrder: 0,
+          characterId: null,
+          contentText: "夜色压住了操场。",
+          metaJson: null,
+        },
+      ],
+    };
+
+    useProjectStore.setState({
+      currentProject: {
+        ...currentProject,
+        scenes: [scene],
+      },
+    });
+    useEditorStore.setState({
+      scenes: [scene],
+      links: [],
+      variables: [],
+      selectedSceneId: "s1",
+      selectedVariableId: null,
+    });
+
+    renderProjectHomePageWithRoutes();
+
+    expect(screen.getByRole("heading", { name: "最近编辑" })).toBeInTheDocument();
+    expect(screen.getByText("旧校舍入口")).toBeInTheDocument();
+    expect(screen.getByText("所属路线：共通线")).toBeInTheDocument();
+    expect(screen.getByText("当前状态：需修改")).toBeInTheDocument();
+    expect(screen.getByText("林夏决定独自进入旧校舍。")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "继续写作" }));
+    expect(screen.getByText("编辑器场景：s1")).toBeInTheDocument();
+
+    renderProjectHomePageWithRoutes();
+    await user.click(screen.getByRole("button", { name: "打开分支图" }));
+    expect(screen.getByText("分支图页")).toBeInTheDocument();
+
+    renderProjectHomePageWithRoutes();
+    await user.click(screen.getByRole("button", { name: "从头预览" }));
+    expect(screen.getByText("预览页")).toBeInTheDocument();
+  });
+
+  it("没有当前选中场景时会降级到首个可用场景", async () => {
+    const user = userEvent.setup();
+
+    useProjectStore.getState().createProject("雨夜回响", "一段校园悬疑故事");
+    const currentProject = useProjectStore.getState().currentProject!;
+    const routeId = currentProject.routes[0]!.id;
+    const laterScene = {
+      id: "s2",
+      projectId: currentProject.id,
+      routeId,
+      title: "后段场景",
+      summary: "",
+      sceneType: "branch" as const,
+      status: "draft" as const,
+      chapterLabel: "",
+      sortOrder: 2,
+      isStartScene: false,
+      isEndingScene: false,
+      notes: "",
+      blocks: [],
+    };
+    const firstScene = {
+      id: "s1",
+      projectId: currentProject.id,
+      routeId,
+      title: "最先可用场景",
+      summary: "作为降级入口。",
+      sceneType: "normal" as const,
+      status: "completed" as const,
+      chapterLabel: "",
+      sortOrder: 0,
+      isStartScene: true,
+      isEndingScene: false,
+      notes: "",
+      blocks: [],
+    };
+
+    useProjectStore.setState({
+      currentProject: {
+        ...currentProject,
+        scenes: [laterScene, firstScene],
+      },
+    });
+    useEditorStore.setState({
+      scenes: [laterScene, firstScene],
+      links: [],
+      variables: [],
+      selectedSceneId: null,
+      selectedVariableId: null,
+    });
+
+    renderProjectHomePageWithRoutes();
+
+    expect(screen.getByText("最先可用场景")).toBeInTheDocument();
+    expect(screen.getByText("当前状态：已完成")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "继续写作" }));
+    expect(screen.getByText("编辑器场景：s1")).toBeInTheDocument();
   });
 });

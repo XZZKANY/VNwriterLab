@@ -651,10 +651,17 @@ describe("GraphPage", () => {
     });
 
     expect(within(issueSummary).getByText("起点")).toBeInTheDocument();
+    expect(within(issueSummary).getByText("问题分类：条件异常")).toBeInTheDocument();
     expect(
       within(issueSummary).getByText("条件块引用了已删除变量"),
     ).toBeInTheDocument();
     expect(within(issueSummary).getByText("前置节点")).toBeInTheDocument();
+    expect(
+      within(issueSummary).getByText("问题分类：空场景、无出口"),
+    ).toBeInTheDocument();
+    expect(
+      within(issueSummary).getByText("问题分类：无入边、跳转异常、副作用异常"),
+    ).toBeInTheDocument();
     expect(
       within(issueSummary).getByText("选项块跳转到不存在的场景"),
     ).toBeInTheDocument();
@@ -664,9 +671,12 @@ describe("GraphPage", () => {
 
     await user.click(screen.getByLabelText("只看问题节点"));
 
-    expect(within(issueSummary).queryByText("起点")).not.toBeInTheDocument();
+    expect(within(issueSummary).getByText("起点")).toBeInTheDocument();
     expect(
       within(issueSummary).getByText("前置节点"),
+    ).toBeInTheDocument();
+    expect(
+      within(issueSummary).getByText("问题节点"),
     ).toBeInTheDocument();
     expect(
       within(issueSummary).getByText("选项块副作用引用了已删除变量"),

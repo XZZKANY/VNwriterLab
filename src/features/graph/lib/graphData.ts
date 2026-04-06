@@ -14,9 +14,25 @@ export interface SceneGraphConditionSummary {
   summary: string;
 }
 
+export type SceneGraphIssueCode =
+  | "emptyScene"
+  | "noIncoming"
+  | "noOutgoing"
+  | "missingConditionVariable"
+  | "deletedConditionVariable"
+  | "missingTargetScene"
+  | "deletedEffectVariable";
+
+export interface SceneGraphIssue {
+  code: SceneGraphIssueCode;
+  category: string;
+  message: string;
+}
+
 export interface SceneGraphIssueSummary {
   sceneId: string;
   sceneTitle: string;
+  categories: string[];
   issues: string[];
 }
 
@@ -48,44 +64,16 @@ function buildSceneMap(scenes: Scene[]) {
   return new Map(scenes.map((scene) => [scene.id, scene]));
 }
 
-function buildVisibleGraphIndex(graph: SceneGraphData) {
-  const incomingCountByNodeId = new Map<string, number>();
-  const outgoingCountByNodeId = new Map<string, number>();
-
-  graph.nodes.forEach((node) => {
-    incomingCountByNodeId.set(node.id, 0);
-    outgoingCountByNodeId.set(node.id, 0);
-  });
-
-  graph.edges.forEach((edge) => {
-    outgoingCountByNodeId.set(
-      edge.source,
-      (outgoingCountByNodeId.get(edge.source) ?? 0) + 1,
-    );
-    incomingCountByNodeId.set(
-      edge.target,
-      (incomingCountByNodeId.get(edge.target) ?? 0) + 1,
-    );
-  });
-
+function createIssue(
+  code: SceneGraphIssueCode,
+  category: string,
+  message: string,
+): SceneGraphIssue {
   return {
-    incomingCountByNodeId,
-    outgoingCountByNodeId,
+    code,
+    category,
+    message,
   };
-}
-
-function isQuestionScene(
-  node: Node<SceneGraphNodeData>,
-  incomingCountByNodeId: Map<string, number>,
-  outgoingCountByNodeId: Map<string, number>,
-) {
-  const incomingCount = incomingCountByNodeId.get(node.id) ?? 0;
-  const outgoingCount = outgoingCountByNodeId.get(node.id) ?? 0;
-
-  return (
-    (!node.data.isEndingScene && outgoingCount === 0) ||
-    (incomingCount === 0 && !node.data.isStartScene)
-  );
 }
 
 function collectSceneIssues(
@@ -95,14 +83,24 @@ function collectSceneIssues(
   incomingCount: number,
   outgoingCount: number,
 ) {
-  const issues: string[] = [];
+  const issues: SceneGraphIssue[] = [];
+
+  if (scene.blocks.length === 0) {
+    issues.push(
+      createIssue("emptyScene", "空场景", "当前场景还没有任何内容块"),
+    );
+  }
 
   if (!scene.isEndingScene && outgoingCount === 0) {
-    issues.push("非结局场景且没有任何出边");
+    issues.push(
+      createIssue("noOutgoing", "无出口", "非结局场景且没有任何出边"),
+    );
   }
 
   if (!scene.isStartScene && incomingCount === 0) {
-    issues.push("没有任何入边且不是起始场景");
+    issues.push(
+      createIssue("noIncoming", "无入边", "没有任何入边且不是起始场景"),
+    );
   }
 
   const sortedBlocks = [...scene.blocks].sort(
@@ -114,12 +112,24 @@ function collectSceneIssues(
       const condition = parseConditionBlockMeta(block.metaJson);
       condition.conditions.forEach((item) => {
         if (!item.variableId) {
-          issues.push("条件块未选择变量");
+          issues.push(
+            createIssue(
+              "missingConditionVariable",
+              "条件异常",
+              "条件块未选择变量",
+            ),
+          );
           return;
         }
 
         if (!variablesById.has(item.variableId)) {
-          issues.push("条件块引用了已删除变量");
+          issues.push(
+            createIssue(
+              "deletedConditionVariable",
+              "条件异常",
+              "条件块引用了已删除变量",
+            ),
+          );
         }
       });
       return;
@@ -131,11 +141,23 @@ function collectSceneIssues(
 
     const choice = parseChoiceBlockMeta(block.metaJson);
     if (choice.targetSceneId && !sceneById.has(choice.targetSceneId)) {
-      issues.push("选项块跳转到不存在的场景");
+      issues.push(
+        createIssue(
+          "missingTargetScene",
+          "跳转异常",
+          "选项块跳转到不存在的场景",
+        ),
+      );
     }
 
     if (choice.effectVariableId && !variablesById.has(choice.effectVariableId)) {
-      issues.push("选项块副作用引用了已删除变量");
+      issues.push(
+        createIssue(
+          "deletedEffectVariable",
+          "副作用异常",
+          "选项块副作用引用了已删除变量",
+        ),
+      );
     }
   });
 
@@ -156,7 +178,8 @@ function formatConditionSummary(
       const variable = item.variableId
         ? variablesById.get(item.variableId) ?? null
         : null;
-      const variableName = variable?.name ?? (item.variableId ? "已删除变量" : "未选择变量");
+      const variableName =
+        variable?.name ?? (item.variableId ? "已删除变量" : "未选择变量");
 
       if (item.operator === "gte") {
         return `${variableName} ≥ ${item.compareValue}`;
@@ -164,7 +187,7 @@ function formatConditionSummary(
 
       return `${variableName} 为真`;
     })
-    .join("且");
+    .join("；");
 }
 
 function collectConditionBlocks(scene: Scene, sourceBlockId: string | null) {
@@ -234,7 +257,7 @@ export function buildSceneGraph(
       label: link.label,
       animated: link.linkType === "choice",
     })),
-      conditionSummaries: links.flatMap((link) => {
+    conditionSummaries: links.flatMap((link) => {
       const scene = scenes.find((item) => item.id === link.fromSceneId);
       if (!scene) {
         return [];
@@ -254,9 +277,9 @@ export function buildSceneGraph(
           summary: conditionBlocks
             .map((block) => formatConditionSummary(block, variablesById))
             .join("；"),
-          },
-        ];
-      }),
+        },
+      ];
+    }),
     issueSummaries: orderedScenes
       .map((scene) => {
         const incomingCount = links.filter(
@@ -280,7 +303,8 @@ export function buildSceneGraph(
         return {
           sceneId: scene.id,
           sceneTitle: scene.title,
-          issues,
+          categories: [...new Set(issues.map((issue) => issue.category))],
+          issues: issues.map((issue) => issue.message),
         };
       })
       .filter(
@@ -304,9 +328,7 @@ export function applySceneGraphFilters(
     (edge) =>
       visibleSceneIds.has(edge.source) && visibleSceneIds.has(edge.target),
   );
-  const routeFilteredEdgeIds = new Set(
-    routeFilteredEdges.map((edge) => edge.id),
-  );
+  const routeFilteredEdgeIds = new Set(routeFilteredEdges.map((edge) => edge.id));
   const routeFilteredGraph: SceneGraphData = {
     nodes: graph.nodes.filter((node) => visibleSceneIds.has(node.id)),
     edges: routeFilteredEdges,
@@ -324,14 +346,8 @@ export function applySceneGraphFilters(
     return routeFilteredGraph;
   }
 
-  const { incomingCountByNodeId, outgoingCountByNodeId } =
-    buildVisibleGraphIndex(routeFilteredGraph);
   const questionSceneIds = new Set(
-    routeFilteredGraph.nodes
-      .filter((node) =>
-        isQuestionScene(node, incomingCountByNodeId, outgoingCountByNodeId),
-      )
-      .map((node) => node.id),
+    routeFilteredGraph.issueSummaries.map((summary) => summary.sceneId),
   );
   const questionEdges = routeFilteredGraph.edges.filter(
     (edge) =>

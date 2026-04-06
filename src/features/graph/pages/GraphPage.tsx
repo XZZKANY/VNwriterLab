@@ -27,14 +27,11 @@ export function GraphPage() {
     routes.some((route) => route.id === selectedRouteId)
       ? selectedRouteId
       : routes[0]?.id ?? "";
-  const graph = applySceneGraphFilters(
-    buildSceneGraph(scenes, links, variables),
-    {
-      routeFilter,
-      routeId: activeRouteId || null,
-      questionOnly,
-    },
-  );
+  const graph = applySceneGraphFilters(buildSceneGraph(scenes, links, variables), {
+    routeFilter,
+    routeId: activeRouteId || null,
+    questionOnly,
+  });
 
   function handleOpenScene(sceneId: string) {
     selectScene(sceneId);
@@ -117,11 +114,17 @@ export function GraphPage() {
                           返回编辑：{node.data.label}
                         </button>
                         {nodeIssues?.issues.length ? (
-                          <ul>
-                            {nodeIssues.issues.map((issue, index) => (
-                              <li key={`${node.id}-${index}`}>{issue}</li>
-                            ))}
-                          </ul>
+                          <>
+                            <p>
+                              问题分类：
+                              {nodeIssues.categories.join("、")}
+                            </p>
+                            <ul>
+                              {nodeIssues.issues.map((issue, index) => (
+                                <li key={`${node.id}-${index}`}>{issue}</li>
+                              ))}
+                            </ul>
+                          </>
                         ) : (
                           <p>暂无问题明细。</p>
                         )}
