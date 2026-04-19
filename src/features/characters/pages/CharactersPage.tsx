@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useProjectStore } from "../../projects/store/useProjectStore";
 import { useEditorStore } from "../../editor/store/useEditorStore";
 import { useCharacterStore } from "../store/useCharacterStore";
@@ -33,10 +34,15 @@ function getCharacterRouteSummary(
 }
 
 function getCharacterSceneReferences(
+  routes: Project["routes"],
   editorScenes: Scene[],
   characterId: string,
 ) {
-  return editorScenes
+  const routeOrderById = new Map(
+    routes.map((route) => [route.id, route.sortOrder] as const),
+  );
+
+  const sceneReferences = editorScenes
     .map((scene) => {
       const blockCount = scene.blocks.filter(
         (block) => block.characterId === characterId,
@@ -51,7 +57,33 @@ function getCharacterSceneReferences(
         scene: Scene;
         blockCount: number;
       } => item !== null,
-    )
+    );
+
+  const firstAppearanceSceneId =
+    [...sceneReferences]
+      .sort((left, right) => {
+        const leftRouteOrder =
+          routeOrderById.get(left.scene.routeId) ?? Number.MAX_SAFE_INTEGER;
+        const rightRouteOrder =
+          routeOrderById.get(right.scene.routeId) ?? Number.MAX_SAFE_INTEGER;
+
+        if (leftRouteOrder !== rightRouteOrder) {
+          return leftRouteOrder - rightRouteOrder;
+        }
+
+        if (left.scene.sortOrder !== right.scene.sortOrder) {
+          return left.scene.sortOrder - right.scene.sortOrder;
+        }
+
+        return left.scene.id.localeCompare(right.scene.id);
+      })[0]?.scene.id ?? null;
+
+  return sceneReferences
+    .map(({ scene, blockCount }) => ({
+      scene,
+      blockCount,
+      isFirstAppearance: scene.id === firstAppearanceSceneId,
+    }))
     .sort((left, right) => {
       if (left.blockCount === right.blockCount) {
         return left.scene.sortOrder - right.scene.sortOrder;
@@ -68,6 +100,7 @@ export function CharactersPage() {
   const selectedCharacterId = useCharacterStore(
     (state) => state.selectedCharacterId,
   );
+  const hydrateCharacters = useCharacterStore((state) => state.hydrateCharacters);
   const createCharacter = useCharacterStore((state) => state.createCharacter);
   const selectCharacter = useCharacterStore((state) => state.selectCharacter);
   const updateCharacter = useCharacterStore((state) => state.updateCharacter);
@@ -83,9 +116,19 @@ export function CharactersPage() {
     currentProject && selectedCharacter
       ? getCharacterRouteSummary(currentProject, selectedCharacter.routeId)
       : null;
-  const sceneReferences = selectedCharacter
-    ? getCharacterSceneReferences(editorScenes, selectedCharacter.id)
+  const sceneReferences = currentProject && selectedCharacter
+    ? getCharacterSceneReferences(
+        currentProject.routes,
+        editorScenes,
+        selectedCharacter.id,
+      )
     : [];
+
+  useEffect(() => {
+    if (currentProject && projectCharacters.length === 0) {
+      void hydrateCharacters(currentProject.id);
+    }
+  }, [currentProject, projectCharacters.length, hydrateCharacters]);
 
   return (
     <section>
@@ -205,11 +248,15 @@ export function CharactersPage() {
                     <>
                       <p>当前角色在 {sceneReferences.length} 个场景中被引用。</p>
                       <ul aria-label="场景引用列表">
-                        {sceneReferences.map(({ scene, blockCount }) => (
+                        {sceneReferences.map(
+                          ({ scene, blockCount, isFirstAppearance }) => (
                           <li key={scene.id}>
-                            {scene.title}（{blockCount} 处）
+                            {`${scene.title}（${blockCount} 处${
+                              isFirstAppearance ? "，首次出场" : ""
+                            }）`}
                           </li>
-                        ))}
+                          ),
+                        )}
                       </ul>
                     </>
                   ) : (

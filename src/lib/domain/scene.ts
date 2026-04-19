@@ -1,7 +1,12 @@
 import type { SceneBlock } from "./block";
 
 export type SceneType = "normal" | "branch" | "ending";
-export type SceneStatus = "draft" | "completed" | "needs_revision";
+export type SceneStatus =
+  | "draft"
+  | "completed"
+  | "needs_revision"
+  | "needs_supplement"
+  | "needs_logic_check";
 
 export interface Scene {
   id: string;

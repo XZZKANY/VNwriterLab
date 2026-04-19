@@ -9,4 +9,5 @@ export interface ReferenceRepository {
   saveLoreEntry(entry: LoreEntry): Promise<void>;
   listVariables(projectId: string): Promise<ProjectVariable[]>;
   saveVariable(variable: ProjectVariable): Promise<void>;
+  saveVariables(projectId: string, variables: ProjectVariable[]): Promise<void>;
 }

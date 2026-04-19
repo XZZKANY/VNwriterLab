@@ -472,3 +472,796 @@ score: 96
 
 ## 结论摘要
 当前工作区未提交改动已经完成本地测试闭环与构建闭环，可以视为最小可交付闭环。下一步不需要继续补验证，而应进入提交整理、按功能批次拆分提交，或继续推进新的增量需求。
+
+---
+
+## 任务
+审查并推进项目：补齐 V1.5 场景状态管理
+
+## 验证时间
+2026-04-07 14:38:01
+
+## 结论
+```Scoring
+score: 95
+```
+
+## 技术维度
+- 代码质量：改动收敛在 `SceneStatus` 领域类型、编辑页状态下拉、首页状态文案和两份页面测试中，没有新增并行状态源或额外抽象层。
+- 测试覆盖：先新增失败测试，再补最小实现，随后完成相关回归 `39/39`、全量 `84/84` 和构建验证，主链路证据充分。
+- 规范遵循：继续沿用 TypeScript 联合类型、React 受控表单、Zustand store 同步与简体中文文案，符合仓库既有风格。
+
+## 战略维度
+- 需求匹配：直接补齐路线图中声明但代码未实现的五态场景状态管理，属于高价值且边界清晰的推进项。
+- 架构一致：没有重构 store，同步逻辑仍由 `useProjectStore` / `useEditorStore` 沿用既有模式处理。
+- 风险评估：当前状态标签仍保留在页面本地映射中；若未来更多页面消费状态，建议再集中抽取共享元数据，但当前规模下不构成阻塞。
+
+## 本地验证
+- `npm.cmd test -- src/features/editor/pages/EditorPage.test.tsx src/features/projects/pages/ProjectHomePage.test.tsx src/lib/store/persistence.test.ts`：通过（3 个测试文件，39 个测试全部通过）
+- `npm.cmd test`：通过（19 个测试文件，84 个测试全部通过）
+- `npm.cmd run build`：通过
+
+## 建议
+通过
+
+## 结论摘要
+本轮审查先确认了 V1.5 多数能力已经落地，再把最明确的缺口收敛到“场景状态管理五态不完整”。最终改动补齐了 `待补充` 与 `待检查逻辑` 两种状态，使领域模型、编辑页和项目首页在同一语义下工作，并通过本地回归、全量测试和构建验证证明该推进项已经形成稳定闭环。
+
+---
+
+## 任务
+继续推进项目：补齐 V1.5 项目模板增强
+
+## 验证时间
+2026-04-07 15:14:53
+
+## 结论
+```Scoring
+score: 95
+```
+
+## 技术维度
+- 代码质量：新增模板仍然收敛在 `createTemplateProject`，表单只追加选项，没有引入模板注册表、并行工厂或额外状态层。
+- 测试覆盖：按 TDD 方式先写失败测试，再补最小实现；模板定向测试 `21/21` 通过，全量测试 `88/88` 通过。
+- 规范遵循：继续沿用 TypeScript 联合类型、纯函数工厂、React 受控表单和简体中文文案，符合仓库当前模式。
+
+## 战略维度
+- 需求匹配：直接补齐路线图中缺失的 `悬疑调查模板` 和 `恋爱路线模板` 两项 V1.5 范围能力。
+- 架构一致：实现完全依赖现有 `ProjectTemplate -> ProjectCreateForm -> createEmptyProject -> ProjectHomePage` 链路，没有触碰 editor、graph、preview 等无关模块。
+- 风险评估：当前两个新模板仍是“最小骨架模板”，后续若要进一步强化模板价值，可以再补更丰富的场景节点与描述，但不影响本轮通过结论。
+
+## 本地验证
+- `npm.cmd test -- src/lib/domain/domain.test.ts src/features/projects/pages/ProjectHomePage.test.tsx`：通过（2 个测试文件，21 个测试全部通过）
+- `npm.cmd test`：通过（19 个测试文件，88 个测试全部通过）
+- `npm.cmd run build`：通过
+
+## 建议
+通过
+
+## 结论摘要
+本轮把 V1.5 模板增强从“只落了 3 种非空白模板”推进到了“路线图承诺的 5 种模板全部可选”。现在项目创建表单已经支持悬疑调查和恋爱路线两种新模板，领域层会生成对应的路线骨架与默认场景，页面创建流程也能直接展示这些结构；定向测试、全量测试和构建都已通过，可以继续转向下一类 V1.5 内容增强。 
+
+---
+
+## 任务
+继续推进项目：补齐 V1.5 角色首次出场标记
+
+## 验证时间
+2026-04-07 20:03:02
+
+## 结论
+```Scoring
+score: 95
+```
+
+## 技术维度
+- 代码质量：改动继续收敛在 `CharactersPage` 页面内的纯函数派生与列表文案追加，没有修改角色模型、store 结构或持久化字段；首次出场判断明确以路线顺序、场景顺序和 `id` 兜底排序推导，避免被现有“按引用次数排序”的展示逻辑误导。
+- 测试覆盖：既覆盖了既有角色引用文案回归，也新增“最早出场场景带首次出场标记”的定向用例；本轮补跑角色页单测 `6/6`、关联回归 `45/45`、全量 `89/89`，并完成构建验证，证据完整。
+- 规范遵循：继续沿用 Vitest + Testing Library 页面测试模式、页面内 camelCase 派生函数与简体中文展示文案，改动边界保持在角色页及其测试文件内，符合仓库现有风格。
+
+## 战略维度
+- 需求匹配：直接补齐路线图中“角色与场景关联”缺失的首次出场标记，让角色详情页在现有引用列表基础上给出更完整的阅读语义。
+- 架构一致：实现完全复用 `currentProject.routes` 与 `editorScenes` 的既有数据源，只在角色页消费派生结果，没有引入新的状态源、共享服务或跨模块耦合。
+- 风险评估：当前标记仅在角色页引用列表展示，范围收敛且可控；若后续其他页面也要消费首次出场语义，再考虑抽取共享派生工具即可，但当前规模下不构成阻塞。
+
+## 本地验证
+- `npm.cmd test -- src/features/characters/pages/CharactersPage.test.tsx`：通过（1 个测试文件，6 个测试全部通过）
+- `npm.cmd test -- src/features/characters/pages/CharactersPage.test.tsx src/features/editor/pages/EditorPage.test.tsx src/features/projects/pages/ProjectHomePage.test.tsx src/lib/domain/domain.test.ts`：通过（4 个测试文件，45 个测试全部通过）
+- `npm.cmd test`：通过（19 个测试文件，89 个测试全部通过）
+- `npm.cmd run build`：通过
+
+## 建议
+通过
+
+## 结论摘要
+本轮把角色页“只显示被哪些场景引用”推进到“还能标出最早出场场景”。现在当角色在多个场景被引用时，角色详情会基于路线顺序与场景顺序自动标记首次出场位置，既保留原有引用次数展示，也补齐了更贴近写作视角的时间语义。相关角色页测试、关联回归、全量测试和构建均已通过，可以和前面的场景状态管理、项目模板增强一起进入提交整理。
+
+---
+
+## 任务
+Task 1 spec compliance review：内容缺失规则失败测试提交 `f86301d1720d31190b293810c113c3ef23b2c5a4`
+
+## 审查时间
+2026-04-07 22:00:00
+
+## 结论
+```Scoring
+score: 96
+```
+
+## 审查范围
+仅审计划/设计符合性，不评价代码风格。核对项包括：允许修改文件范围、两类测试语义、是否修改生产代码、指定测试命令是否保持红灯、提交信息是否匹配。
+
+## 关键证据
+- 计划文件 `docs/superpowers/plans/2026-04-07-v1-5-content-gap-rule.md` 的 Task 1 明确要求只修改 `src/features/graph/lib/graphIssueCategories.test.ts`，并在当前阶段保持红灯。
+- 设计文件 `docs/superpowers/specs/2026-04-07-v1-5-content-gap-rule-design.md` 要求纯函数测试补“命中内容缺失”和“不命中内容缺失”两类用例。
+- 提交 `f86301d1720d31190b293810c113c3ef23b2c5a4` 仅改动 `src/features/graph/lib/graphIssueCategories.test.ts`，未触及生产代码。
+- 提交信息精确为 `为内容缺失规则补失败测试`。
+- 本地在 worktree `D:\VNwriterLab\.worktrees\v1-5-content-gap-rule` 运行 `npm.cmd test -- src/features/graph/lib/graphIssueCategories.test.ts`，结果为 `1 failed / 2 passed`，失败点是“内容缺失”断言未满足，符合当前阶段红灯预期。
+
+## 建议
+通过
+
+## 结论摘要
+该提交满足 Task 1 的计划/设计边界：只改指定测试文件，补上两类测试语义，不含生产代码改动，提交信息匹配，且本地验证仍处于实现前红灯状态，因此本次 spec 审查结论为 PASS。
+
+---
+
+## 任务
+排查 `codex_apps` MCP 启动失败（`https://chatgpt.com/backend-api/wham/apps`）
+
+## 验证时间
+2026-04-08 19:09:06
+
+## 结论
+```Scoring
+score: 93
+```
+
+## 技术维度
+- 代码质量：本次未修改仓库业务代码，排障过程遵循“配置 → 日志 → 历史会话 → 当前网络验证”的系统化路径，避免了无证据猜测。
+- 测试覆盖：虽然不是单元测试任务，但已完成可复现本地验证：`Test-NetConnection chatgpt.com -Port 443` 当前失败，且与 `plugins/list`、`connectors/directory/list`、`wham/apps` 的日志失败相互印证。
+- 规范遵循：全部输出与留痕均使用简体中文，工作文件写入 `D:\VNwriterLab\.codex\`，结论区分事实与推断，没有泄露凭据内容。
+
+## 战略维度
+- 需求匹配：已明确回答用户告警的本质——这是 `codex_apps`/apps/connectors 云端链路失败，不是 desktop-commander 等本地 MCP 普遍损坏。
+- 架构一致：结论与当前运行架构一致：模型请求走 `cliproxy -> 127.0.0.1:8317`，而 `codex_apps`、plugins、connectors 走 `chatgpt.com/backend-api/*`，因此可出现“主对话能用、apps 不能用”的分层故障。
+- 风险评估：当前最大风险是网络/地区/登录态三者之一持续阻断 `chatgpt.com` 云端能力；另外历史日志中的 `unsupported_country_region_territory` 说明即使网络恢复，账号侧也可能继续限制部分功能。
+
+## 本地验证
+- `Test-NetConnection chatgpt.com -Port 443`：失败，`TcpTestSucceeded = False`
+- `C:\Users\kanye\.codex\log\codex-tui.log`：2026-04-08 存在 `plugins/list` 与 `connectors/directory/list` 请求失败
+- `C:\Users\kanye\.codex\sessions\2026\04\04\rollout-2026-04-04T18-44-40-019d5818-4c75-7602-8320-94f379899b61.jsonl`：存在 `wham/apps` TCP 超时与 `unsupported_country_region_territory` 记录
+- `C:\Users\kanye\.codex\.codex-global-state.json`：`codexCloudAccess=enabled_needs_setup`
+
+## 建议
+通过
+
+## 结论摘要
+当前 `codex_apps` MCP 启动失败的最可能根因，不是本地 MCP 配置坏了，而是 Codex 到 `chatgpt.com` 的云端 apps/connectors 后端链路不可达或受限。现有证据显示：一方面 `chatgpt.com:443` 当前直连失败，另一方面历史会话曾明确返回 `wham/apps` TCP 超时与 `unsupported_country_region_territory`。因此这个告警属于“云端扩展能力启动失败”，通常不会直接破坏当前通过 `cliproxy` 访问模型和本地 stdio MCP 的能力，但会影响 apps、plugins、connectors 与 discoverable tools。后续应优先检查网络可达性、重做登录/云访问设置，并评估账号地区限制，而不是修改项目代码。
+
+## 仓库检查验证报告
+
+## 验证时间
+2026-04-08 20:03:28
+
+## 结论
+```Scoring
+score: 91
+```
+
+## 技术维度
+- 代码质量：本次未修改业务代码，但仓库分析覆盖了入口、页面、store、自动保存、图视图与 Tauri 层，结构判断有明确文件证据。
+- 测试覆盖：已执行 `npm.cmd test` 与 `npm.cmd run build`。构建成功；测试失败经核实来自 `.worktrees/v1-5-content-gap-rule` 的 2 个图相关测试，根工作区同名测试通过。
+- 规范遵循：全部输出、摘要、日志均使用简体中文，工作文件写入 `D:\VNwriterLab\.codex\`，符合仓库要求。
+
+## 战略维度
+- 需求匹配：已完成对仓库的整体检查，覆盖技术栈、结构、核心实现模式、测试体系、当前工作区状态与主要风险。
+- 架构一致：结论与现有分层一致，准确识别 `app / features / lib / src-tauri` 的组织方式，以及 `Zustand + persist + 页面聚合` 的主路径。
+- 风险评估：已指出 `.worktrees` 测试污染、大体量 store、SQLite 与 localStorage 并存、`act(...)` 警告等关键问题。
+
+## 本地验证
+- `git -c safe.directory=D:/VNwriterLab branch --show-current`：`main`
+- `git -c safe.directory=D:/VNwriterLab status --short --untracked-files=no`：存在未提交改动，集中在 `src/features/*`、`src/lib/domain/*`、`src-tauri/Cargo.toml` 等文件
+- `npm.cmd test`：退出码 1；失败点位于 `.worktrees/v1-5-content-gap-rule/src/features/graph/lib/graphData.test.ts` 与 `.worktrees/v1-5-content-gap-rule/src/features/graph/pages/GraphPage.test.tsx`
+- `npm.cmd run build`：退出码 0；Vite 构建成功
+
+## 建议
+通过
+
+## 结论摘要
+本次仓库检查已经达到可交付水平：仓库的主技术栈、目录结构、核心实现模式、测试体系和当前风险都已被识别，并通过本地命令完成验证。当前最重要的问题不是主工作区代码立即不可用，而是测试环境被 `.worktrees` 中的分支工作树污染，导致 `npm test` 结论失真；其次是 `useProjectStore`、`useEditorStore` 体量偏大，以及 SQLite 基础设施与 localStorage 主路径尚未完全收敛。若继续推进，应优先处理测试目录排除、测试警告清理和持久化层收敛。
+
+## Vitest 排除 .worktrees 验证报告
+
+## 验证时间
+2026-04-08 20:58:30
+
+## 结论
+```Scoring
+score: 95
+```
+
+## 技术维度
+- 代码质量：改动仅限 `vitest.config.ts`，范围小且精确，直接命中测试发现污染问题。
+- 测试覆盖：已执行 fresh `npm.cmd test` 与 `npm.cmd run build`；测试由 red 失败变为 green 通过，且构建保持成功。
+- 规范遵循：配置写法遵循 Vitest 官方建议，保留默认排除项并追加 `.worktrees` 规则。
+
+## 战略维度
+- 需求匹配：完全满足“先排除 `.worktrees`，再复跑主工作区测试”的要求。
+- 架构一致：未侵入业务模块，不影响现有 `features/*`、`lib/*`、`src-tauri/*` 分层。
+- 风险评估：当前主要剩余风险已从“测试结论失真”收敛到“真实测试警告与后续架构收敛”。
+
+## 本地验证
+- `npm.cmd test`（修改前）：失败，输出包含 `.worktrees/v1-5-content-gap-rule/...`
+- `npm.cmd test`（修改后）：退出码 0，`Test Files 19 passed (19)`，`Tests 89 passed (89)`，输出不再包含 `.worktrees`
+- `npm.cmd run build`：退出码 0，构建成功
+
+## 建议
+通过
+
+## 结论摘要
+本次最小修复已经有效隔离 `.worktrees` 对主工作区测试发现的污染。当前根工作区真实状态是：完整测试通过、构建通过，但仍存在 `EditorPage.test.tsx` 的 `act(...)` 警告，以及后续待处理的大 store 拆分和 SQLite 收敛问题。因此下一步应优先清理测试警告，再进入结构性重构，最后推进持久化层收敛。
+
+## V1.5 测试稳定性
+
+## 验证时间
+2026-04-09 19:36:30
+
+## 结论
+```Scoring
+score: 93
+```
+
+## 技术维度
+- 代码质量：遵循“先复现再修复”的调试原则，在告警未复现的情况下没有盲改 `EditorPage` 或测试异步时序；仅修正了 2 处乱码测试字面量。
+- 测试覆盖：定向 `18/18`、全量 `92/92`、构建验证全部通过，且 fresh 输出中未再出现历史 `act(...)` 警告。
+- 规范遵循：测试文案恢复为正常简体中文，未新增额外测试工具或包装层。
+
+## 战略维度
+- 需求匹配：完成了“稳定主工作区验证”的当前阶段目标——确认历史警告已不再阻塞当前基线，并清理仍可见的测试噪声。
+- 架构一致：未触碰生产页面逻辑，避免在无证据前提下引入新的异步处理或抽象。
+
+- 风险评估：当前该风险已降级为“旧日志遗留项”；若后续再次复现，需要基于新的 stderr 输出重新分析。
+
+## 本地验证
+- `npm.cmd test -- src/features/editor/pages/EditorPage.test.tsx`：通过
+- `npm.cmd test`：通过（19 个测试文件，92 个测试全部通过）
+- `npm.cmd run build`：通过
+
+## 建议
+通过
+
+## 结论摘要
+本轮没有继续追逐已经消失的 `act(...)` 告警，而是先用 fresh 定向测试和全量测试确认它在当前根工作区已不再复现，再把仍然可见的乱码测试字面量做了最小清理。这样既提升了主工作区验证可信度，也避免了无证据改动生产代码。下一段可以转入 store 纯逻辑边界收紧。
+
+## V1.5 store 边界收紧
+
+## 验证时间
+2026-04-09 20:19:00
+
+## 结论
+```Scoring
+score: 95
+```
+
+## 技术维度
+- 代码质量：把 `useProjectStore.ts` 与 `useEditorStore.ts` 中 8 个纯 helper 显式下沉为 `projectSceneUtils.ts` 与 `editorSceneUtils.ts`，store action 只保留状态编排、autosave 调用和跨 store 同步，职责更清晰。
+- 测试覆盖：新增 2 个 helper 级测试文件，共 7 个测试，且先经过“模块不存在”的 red 阶段；随后相关定向回归、全量测试与构建全部通过。
+- 规范遵循：保持现有 Zustand `create + persist` 组织方式，没有新增 repository/service 层；日志、摘要、报告均写入项目本地 `.codex/`。
+
+## 战略维度
+- 需求匹配：完成了第 3 段的核心目标——在不扩大架构面的前提下收紧 store 纯逻辑边界，并为后续 SQLite/repositories 收敛腾出更清晰的状态层入口。
+- 架构一致：沿用了 `linkUtils.ts`、`choiceBlock.ts`、`conditionBlock.ts` 的现有模式，即纯计算独立模块化、状态副作用留在 store 内。
+- 风险评估：项目侧与编辑器侧场景归一化规则仍然分离，这是刻意保留的边界差异；首次 build 暴露的未使用导入已修正并重新验证。
+
+## 本地验证
+- `npm.cmd test -- src/features/projects/store/projectSceneUtils.test.ts src/features/editor/store/editorSceneUtils.test.ts`：通过（2 文件，7 测试）
+- `npm.cmd test -- src/features/editor/store/useEditorStore.test.ts src/lib/store/persistence.test.ts src/features/projects/pages/ProjectHomePage.test.tsx`：通过（3 文件，24 测试）
+- `npm.cmd test`：通过（21 文件，99 测试）
+- `npm.cmd run build`：通过
+
+## 建议
+通过
+
+## 结论摘要
+本轮成功把两个大 store 中最稳定、最纯的场景排序/归一化逻辑显式下沉成独立 helper 模块，并用先失败后通过的测试把行为钉住。现在 `useProjectStore.ts` 与 `useEditorStore.ts` 的认知负担明显下降，且没有引入新的架构层或副作用路径漂移。下一段可以在保留本段摘要的前提下，专注到 `src/lib/repositories/*` 与 SQLite 边界的现状梳理和收敛决策。
+
+## V1.5 repositories / SQLite 收敛判断
+
+## 验证时间
+2026-04-09 20:43:00
+
+## 结论
+```Scoring
+score: 94
+```
+
+## 技术维度
+- 代码质量：本轮没有在缺乏运行时消费者的前提下强行改业务代码，而是先用真实调用链确认 SQLite 尚未进入前端主路径。
+- 测试覆盖：保留了与数据库边界直接相关的 `src/lib/db/schema.test.ts` 本地验证；同时以代码搜索结果验证 `repositories` 与 `database.ts` 当前没有前端业务调用。
+- 规范遵循：结论、日志、摘要与决策文档全部使用简体中文，且工作文件写入项目本地 `.codex/` 与 `docs/superpowers/specs/`。
+
+## 战略维度
+- 需求匹配：已完成第 4 段核心目标——以 repositories 为边界判断 SQLite 现状，并明确 V2 起点不是直接改 store，而是先实现 SQLite repository adapter。
+- 架构一致：保留了现有 `features/*` store 主链与 `src/lib/repositories` / `src/lib/db` 边界，没有把 SQL 细节回灌到 store。
+- 风险评估：明确阻止了“localStorage + SQLite 双写”这种高回归做法，并把更安全的两步迁移顺序固化成文档。
+
+## 本地验证
+- `npm.cmd test -- src/lib/db/schema.test.ts`：通过
+- `ProjectRepository|StoryRepository|ReferenceRepository` 搜索：无前端业务调用
+- `getDatabase` 搜索：仅 `src/lib/db/database.ts` 自身命中
+- `persist(` 搜索：命中 5 个 store，证明当前主路径仍是 localStorage
+
+## 建议
+通过
+
+## 结论摘要
+本轮确认了一个关键事实：仓库里虽然已经有 SQLite migration、Tauri SQL plugin 和 repository 接口，但它们仍然停留在“边界占位 + 基础设施就绪”阶段，前端主运行时路径依旧是 Zustand `persist` + localStorage。因此，正确的 V2 起点不是直接把现有 stores 改成 SQLite 双写，而是先把 `ProjectRepository`、`StoryRepository`、`ReferenceRepository` 变成可运行的 SQLite adapter，再逐步把 stores 切到 repository 驱动。这一结论已经被写入正式决策文档，可作为后续实现入口。
+
+## V2 SQLite repository adapter
+
+## 验证时间
+2026-04-09 21:56:00
+
+## 结论
+```Scoring
+score: 94
+```
+
+## 技术维度
+- 代码质量：已为 `ProjectRepository`、`StoryRepository`、`ReferenceRepository` 补齐首版 SQLite adapter，并通过 `SqlExecutor` 注入把 SQL 运行时与测试环境解耦。
+- 测试覆盖：新增 3 个 adapter 测试文件共 14 条用例，先经历模块缺失的 red，再 green 通过；同时补跑 domain/schema 联合定向测试、全量测试与 build。
+- 规范遵循：保留既有 `src/lib/repositories` 边界，没有把 SQL 逻辑散入 stores；工作文件写入 `.codex/`，文档与日志使用简体中文。
+
+## 战略维度
+- 需求匹配：本轮完成了 V2 Step 1 的核心部分——SQLite 已从“只有 migration 和连接入口”提升到“前端可消费的 repository adapter 边界”。
+- 架构一致：延续了“database 连接在 `src/lib/db`，repository 实现在 `src/lib/repositories`，store 暂不切主路径”的分层策略。
+- 风险评估：当前 `projects.status` 与 domain 存在轻微 schema 漂移，本轮采用固定默认值 `draft`；`scene_links` 仍未进入 repository 接口范围，因此本轮不等于完成持久化迁移。
+
+## 本地验证
+- `npm.cmd test -- src/lib/repositories/sqliteProjectRepository.test.ts src/lib/repositories/sqliteStoryRepository.test.ts src/lib/repositories/sqliteReferenceRepository.test.ts`：通过（3 文件，14 测试）
+- `npm.cmd test -- src/lib/domain/domain.test.ts src/lib/db/schema.test.ts src/lib/repositories/sqliteProjectRepository.test.ts src/lib/repositories/sqliteStoryRepository.test.ts src/lib/repositories/sqliteReferenceRepository.test.ts`：通过（5 文件，21 测试）
+- `npm.cmd test`：通过（24 文件，113 测试）
+- `npm.cmd run build`：通过
+
+## 建议
+通过
+
+## 结论摘要
+本轮已经把 SQLite 的前端消费边界正式落地：现在仓库里不再只有 repository 接口和 Tauri migration，而是有了可注入执行器驱动的 `sqliteProjectRepository`、`sqliteStoryRepository`、`sqliteReferenceRepository`。这意味着 V2 的下一步可以不再从零开始讨论“SQLite 怎么接”，而是直接进入 store hydration/save contract 的设计与迁移。不过要明确，本轮完成的是 adapter 层，不是 stores 主路径切换；`scene_links`、真实 Tauri 运行时集成和 localStorage 下线仍属于下一阶段任务。
+
+---
+
+## 任务
+V2 Step 2：store repository 驱动
+
+## 验证时间
+2026-04-11 03:13:32
+
+## 结论
+```Scoring
+score: 95
+```
+
+## 技术维度
+- 代码质量：`useProjectStore` 已从 `persist` 主责任切到 repository 驱动，新增 `hydrateLatestProject`，并通过 `projectRepositoryRuntime` 把运行时选择与测试注入隔离开；同时补了 hydrate 时保留 editor 已恢复内容的同步逻辑，避免项目恢复覆盖编辑器已有块内容。
+- 测试覆盖：新增/修复 repository 驱动测试、项目首页恢复测试、角色/设定页面恢复测试与 persistence 回归；相关定向 `56/56` 通过，全量 `116/116` 通过，构建通过。
+- 规范遵循：继续复用 `projectSceneUtils`、`sqliteProjectRepository`、`useAutoSaveStore` 与既有 editor 同步入口，没有把 SQL 逻辑回灌到 store 或页面。
+
+## 战略维度
+- 需求匹配：完成了 V2 Step 2 当前批次的核心目标——project store 不再依赖 localStorage `persist` 作为主恢复链，而是通过 repository 做 hydrate/save，并让项目首页具备显式恢复入口。
+- 架构一致：延续了“repository 负责持久化边界，store 负责 UI 状态编排，页面只触发动作”的仓库结构，没有把 editor/characters/lore 一并硬切到新链路。
+- 风险评估：非 Tauri 环境当前默认回落到 volatile repository，这保证了测试与浏览器环境不误触 SQLite 运行时，但也意味着跨刷新持久化仍以真实 Tauri/注入 repository 为前提；该风险已被测试与日志明确记录，可接受。
+
+## 本地验证
+- `npm.cmd test -- src/features/projects/store/useProjectStore.repository.test.ts`：通过（1 个测试文件，3 个测试全部通过）
+- `npm.cmd test -- src/features/projects/store/useProjectStore.repository.test.ts src/features/projects/pages/ProjectHomePage.test.tsx src/lib/store/persistence.test.ts src/features/editor/pages/EditorPage.test.tsx src/features/characters/pages/CharactersPage.test.tsx src/features/lore/pages/LorePage.test.tsx`：通过（6 个测试文件，56 个测试全部通过）
+- `npm.cmd test`：通过（25 个测试文件，116 个测试全部通过）
+- `npm.cmd run build`：通过
+
+## 建议
+通过
+
+## 结论摘要
+V2 Step 2 这一轮已经完成并形成闭环。现在 project store 已经具备 repository 驱动的恢复与保存契约，首页会在当前项目为空时显式触发 hydrate，测试环境也能通过 runtime provider 注入 fake repository 来稳定验证。更重要的是，项目恢复不会再粗暴覆盖 editor 已恢复的块内容，相关页面、持久化回归、全量测试和构建均已通过，可以作为后续继续推进其他 store repository 化的基线。
+
+---
+
+## 任务
+V2 Step 3：reference store repository 驱动
+
+## 验证时间
+2026-04-11 03:56:46
+
+## 结论
+```Scoring
+score: 95
+```
+
+## 技术维度
+- 代码质量：已为 `useCharacterStore` 与 `useLoreStore` 补齐 repository 驱动的 hydrate/save 契约，并通过 `referenceRepositoryRuntime` 把运行时选择与测试注入隔离开；页面侧只补最小 `useEffect` 触发，没有把持久化逻辑扩散到 UI 层。
+- 测试覆盖：新增 reference runtime 测试、character/lore store repository 测试，并补齐角色页、设定页、persistence 回归；reference 相关定向 `29/29` 通过，全量 `125/125` 通过，构建通过。
+- 规范遵循：继续复用 `sqliteReferenceRepository`、`useAutoSaveStore`、`useProjectStore`，没有把 variables / editor 一并拉入改造，也没有恢复 localStorage + repository 双写。
+
+## 战略维度
+- 需求匹配：完成了 V2 Step 3 当前批次的核心目标——characters / lore 不再依赖 localStorage `persist` 作为主恢复链，而是通过 reference repository 驱动 hydrate/save，并让对应页面具备显式恢复入口。
+- 架构一致：延续了上一轮 project store 的迁移模式，保持“repository 负责持久化、store 负责 UI 状态、页面只触发动作”的边界。
+- 风险评估：当前 `ReferenceRepository` 仍沿用单条保存接口，适合本轮最小迁移；variables 与 editor 仍未进入本轮，风险边界清晰且可控。
+
+## 本地验证
+- `npm.cmd test -- src/features/characters/store/useCharacterStore.repository.test.ts src/features/lore/store/useLoreStore.repository.test.ts`：通过（2 个测试文件，4 个测试全部通过）
+- `npm.cmd test -- src/features/characters/pages/CharactersPage.test.tsx src/features/lore/pages/LorePage.test.tsx`：通过（2 个测试文件，14 个测试全部通过）
+- `npm.cmd test -- src/lib/store/persistence.test.ts`：通过（1 个测试文件，8 个测试全部通过）
+- `npm.cmd test -- src/lib/repositories/referenceRepositoryRuntime.test.ts src/features/characters/store/useCharacterStore.repository.test.ts src/features/lore/store/useLoreStore.repository.test.ts src/features/characters/pages/CharactersPage.test.tsx src/features/lore/pages/LorePage.test.tsx src/lib/store/persistence.test.ts`：通过（6 个测试文件，29 个测试全部通过）
+- `npm.cmd test`：通过（28 个测试文件，125 个测试全部通过）
+- `npm.cmd run build`：通过
+
+## 建议
+通过
+
+## 结论摘要
+V2 Step 3 这一轮已经完成并形成闭环。现在角色与设定 store 都已经具备 repository 驱动的恢复与保存契约，角色页和设定页会在当前 project 已恢复但本地列表为空时自动触发 hydrate；同时，测试环境也能通过 `referenceRepositoryRuntime` 稳定注入 fake repository。相关 store 测试、页面测试、persistence 回归、全量测试和构建均已通过，可以作为后续继续推进 variables / editor repository 化的基线。
+
+---
+
+## 任务
+V2 Step 4：editor variables repository 驱动
+
+## 验证时间
+2026-04-11 14:30:00
+
+## 结论
+```Scoring
+score: 94
+```
+
+## 技术维度
+- 代码质量：已为 editor variables 补齐 `hydrateVariables` 与 repository 快照保存链路，并最小扩展 `ReferenceRepository.saveVariables(projectId, variables)` 支持变量删除闭环；场景、块、连线仍保留既有持久化路径，避免扩大回归面。
+- 测试覆盖：新增 editor variables repository 测试、EditorPage 自动 hydrate 测试，并调整 persistence 变量恢复链；本段综合定向 `39/39` 通过，全量 `129/129` 通过，构建通过。
+- 规范遵循：继续复用 `referenceRepositoryRuntime`、`sqliteReferenceRepository` 与 `useAutoSaveStore`，没有把 SQL 逻辑写入 store 或页面。
+
+## 战略维度
+- 需求匹配：完成了本轮目标——先切 variables + editor 基础 hydrate，不把整个 editor scenes / blocks / links 一次性迁入 repository。
+- 架构一致：延续了 project、characters、lore 的显式 hydrate 与 repository 驱动模式，同时保留 editor 复杂内容链路的既有边界。
+- 风险评估：`saveVariables` 采用按 project 重写变量集合，能覆盖删除闭环；后续若迁移 scenes / blocks / links，需要单独设计 story repository 与 editor store 的保存边界。
+
+## 本地验证
+- `npm.cmd test -- src/lib/repositories/sqliteReferenceRepository.test.ts src/lib/repositories/referenceRepositoryRuntime.test.ts src/features/editor/store/useEditorStore.variablesRepository.test.ts`：通过
+- `npm.cmd test -- src/features/editor/pages/EditorPage.test.tsx src/features/editor/store/useEditorStore.variablesRepository.test.ts`：通过（2 个测试文件，21 个测试全部通过）
+- `npm.cmd test -- src/lib/store/persistence.test.ts`：通过（1 个测试文件，8 个测试全部通过）
+- `npm.cmd test -- src/lib/repositories/sqliteReferenceRepository.test.ts src/lib/repositories/referenceRepositoryRuntime.test.ts src/features/editor/store/useEditorStore.variablesRepository.test.ts src/features/editor/pages/EditorPage.test.tsx src/lib/store/persistence.test.ts`：通过（5 个测试文件，39 个测试全部通过）
+- `npm.cmd test`：通过（29 个测试文件，129 个测试全部通过）
+- `npm.cmd run build`：通过
+
+## 建议
+通过
+
+## 结论摘要
+V2 Step 4 已完成。当前变量已经具备 repository 驱动的恢复与快照保存能力，EditorPage 能在项目恢复后自动 hydrate 变量，变量删除也通过 `saveVariables` 支持 repository 侧删除闭环。至此 project、characters、lore、variables 都有 repository 驱动入口；下一段建议单独规划 editor scenes / blocks / links 的 story repository 接线，不要和本轮混在一起。
+
+## V2 editor scenes repository drive 验证报告
+
+生成时间：2026-04-11 15:06:00
+
+### 审查范围
+
+- `src/lib/repositories/storyRepositoryRuntime.ts`
+- `src/lib/repositories/storyRepositoryRuntime.test.ts`
+- `src/features/editor/store/useEditorStore.ts`
+- `src/features/editor/store/useEditorStore.scenesRepository.test.ts`
+- `src/features/editor/pages/EditorPage.tsx`
+- `src/features/editor/pages/EditorPage.test.tsx`
+- `src/lib/store/persistence.test.ts`
+- `.codex/context-summary-v2-editor-scenes-repository-drive.md`
+- `docs/superpowers/specs/2026-04-11-v2-editor-scenes-repository-drive-design.md`
+- `docs/superpowers/plans/2026-04-11-v2-editor-scenes-repository-drive.md`
+
+### 本地验证
+
+- `npm.cmd test -- src/lib/repositories/storyRepositoryRuntime.test.ts src/features/editor/store/useEditorStore.scenesRepository.test.ts src/features/editor/pages/EditorPage.test.tsx src/lib/store/persistence.test.ts`
+  - 结果：通过，4 files / 35 tests。
+- `npm.cmd test`
+  - 结果：通过，31 files / 137 tests。
+- `npm.cmd run build`
+  - 结果：通过；Vite 输出 chunk size warning，非本段功能阻断项。
+
+### 审查清单
+
+- 需求字段完整性：通过，目标、范围、交付物和验证命令均已留痕。
+- 原始意图覆盖：通过，完成 story repository runtime、store hydrate/save、页面 hydrate、持久化回归。
+- 交付物映射：通过，代码、测试、设计文档、计划文档、上下文摘要、验证报告均已生成或更新。
+- 依赖与风险评估：通过，明确 links/delete/move/create 完整接线仍为后续任务。
+
+### 技术评分
+
+- 代码质量：92/100。复用现有 runtime repository 模式，未重复 SQL adapter；store 改动保持小步边界。
+- 测试覆盖：94/100。覆盖 runtime、store、页面、persistence，并通过全量测试。
+- 规范遵循：93/100。使用简体中文留痕，执行 sequential-thinking、shrimp-task-manager、TDD 和本地验证。
+
+### 战略评分
+
+- 需求匹配：94/100。完成 scenes/blocks repository 接线，按计划排除 links/delete/move。
+- 架构一致：93/100。延续 project/reference repository 驱动模式。
+- 风险评估：91/100。剩余风险已明确后续规划，不影响本段验收。
+
+### 综合结论
+
+```Scoring
+score: 93
+```
+
+summary: 'V2 editor scenes repository drive 已完成并通过本地验证；建议通过，下一段应规划 links 与 scene lifecycle 的 repository 边界。'
+
+## V2 Step 6A scene lifecycle repository 验证报告
+
+生成时间：2026-04-11 19:17:00
+
+### 审查范围
+
+- `src/lib/repositories/storyRepository.ts`
+- `src/lib/repositories/storyRepositoryRuntime.ts`
+- `src/lib/repositories/storyRepositoryRuntime.test.ts`
+- `src/lib/repositories/sqliteStoryRepository.ts`
+- `src/lib/repositories/sqliteStoryRepository.test.ts`
+- `src/features/projects/store/useProjectStore.ts`
+- `src/features/projects/store/useProjectStore.repository.test.ts`
+- 受接口影响的 EditorPage、EditorStore、persistence fake repository 测试。
+
+### 本地验证
+
+- `npm.cmd test -- src/lib/repositories/sqliteStoryRepository.test.ts src/lib/repositories/storyRepositoryRuntime.test.ts src/features/projects/store/useProjectStore.repository.test.ts src/features/editor/store/useEditorStore.scenesRepository.test.ts src/features/editor/pages/EditorPage.test.tsx src/lib/store/persistence.test.ts`
+  - 结果：通过，6 files / 46 tests。
+- `npm.cmd test`
+  - 结果：通过，31 files / 141 tests。
+- `npm.cmd run build`
+  - 结果：通过；Vite chunk size warning 非本段阻断项。
+
+### 审查清单
+
+- 需求字段完整性：通过，scene lifecycle 接口、store 接线和验证命令均已留痕。
+- 原始意图覆盖：通过，完成 create/update/delete/move scene metadata 到 StoryRepository 的同步路径；links list/save 明确留到 Step 6B。
+- 交付物映射：通过，代码、测试、操作日志和验证报告均已更新。
+- 依赖与风险评估：通过，避免 `createScene` 重复插入风险，创建场景时使用 `updateScene` 同步 story 表镜像。
+
+### 技术评分
+
+- 代码质量：91/100。接口扩展小且集中，SQL 清理留在 adapter；仍存在 ProjectRepository 与 StoryRepository 双写复杂度。
+- 测试覆盖：93/100。覆盖 runtime、SQLite adapter、ProjectStore 生命周期和既有 editor/persistence 回归。
+- 规范遵循：92/100。执行 sequential-thinking、shrimp-task-manager、TDD 与本地验证，并使用简体中文留痕。
+
+### 战略评分
+
+- 需求匹配：93/100。完成 Step 6A scene lifecycle，未混入 links list/save。
+- 架构一致：92/100。延续 repository 边界，不在 store 拼 SQL。
+- 风险评估：90/100。明确下一段处理 links 持久化，当前删除场景会清理 scene_links 孤儿数据。
+
+### 综合结论
+
+```Scoring
+score: 92
+```
+
+summary: 'V2 Step 6A scene lifecycle repository 接口已完成并通过本地验证；建议通过，下一段进入 Step 6B links repository 接线。'
+
+## V2 Step 6B links repository 接线验证报告
+
+生成时间：2026-04-12 01:49:00
+
+### 审查范围
+
+- `src/lib/domain/link.ts`
+- `src/features/editor/store/linkUtils.ts`
+- `src/lib/repositories/storyRepository.ts`
+- `src/lib/repositories/storyRepositoryRuntime.ts`
+- `src/lib/repositories/storyRepositoryRuntime.test.ts`
+- `src/lib/repositories/sqliteStoryRepository.ts`
+- `src/lib/repositories/sqliteStoryRepository.test.ts`
+- `src/features/editor/store/useEditorStore.ts`
+- `src/features/editor/store/useEditorStore.scenesRepository.test.ts`
+- 受接口影响的 EditorPage、ProjectStore、persistence fake repository 测试。
+
+### 本地验证
+
+- `npm.cmd test -- src/lib/repositories/sqliteStoryRepository.test.ts src/lib/repositories/storyRepositoryRuntime.test.ts src/features/editor/store/useEditorStore.scenesRepository.test.ts`
+  - 结果：通过，3 files / 18 tests。
+- `npm.cmd test -- src/features/graph/pages/GraphPage.test.tsx src/features/preview/pages/PreviewPage.test.tsx`
+  - 结果：通过，2 files / 11 tests。
+- `npm.cmd test`
+  - 结果：通过，31 files / 145 tests。
+- `npm.cmd run build`
+  - 结果：通过；Vite chunk size warning 非本段阻断项。
+
+### 审查清单
+
+- 需求字段完整性：通过，links repository 契约、SQLite/runtime adapter、store hydrate/save 与验证命令均已留痕。
+- 原始意图覆盖：通过，完成 `scene_links` 从 repository 到 EditorStore 的恢复与保存路径，并保留 Graph/Preview 对显式 links 的消费语义。
+- 交付物映射：通过，代码、测试、操作日志和验证报告均已更新。
+- 依赖与风险评估：通过，明确 choice `metaJson` 与显式 `links` 的双源同步风险，并将派生化重构留作后续独立事项。
+
+### 技术评分
+
+- 代码质量：92/100。domain 类型集中，repository 边界清晰，SQL 写入保持 adapter 内聚；双源 links 仍是既有复杂度。
+- 测试覆盖：94/100。覆盖 SQLite adapter、volatile runtime、EditorStore hydrate/save、Graph/Preview 消费端和全量回归。
+- 规范遵循：93/100。执行 sequential-thinking、shrimp-task-manager、TDD RED/GREEN 与本地验证，并使用简体中文留痕。
+
+### 战略评分
+
+- 需求匹配：94/100。完成 Step 6B links repository 接线，没有扩大到派生化重构。
+- 架构一致：93/100。延续 StoryRepository 作为 editor story 数据边界的方向，避免页面/store 直接接触 SQL。
+- 风险评估：91/100。已覆盖删除场景的 link 清理和 choice/delete block 的快照保存，剩余双源风险有明确后续处理建议。
+
+### 综合结论
+
+```Scoring
+score: 93
+```
+
+summary: 'V2 Step 6B links repository 接线已完成并通过本地验证；建议通过，后续可进入 repository 收口清理或 links 派生化评估。'
+
+## V2 Step 7 useEditorStore localStorage persist 主责任收口验证报告
+
+生成时间：2026-04-12 02:33:00
+
+### 审查范围
+
+- `src/features/editor/store/useEditorStore.ts`
+- `src/lib/store/persistence.test.ts`
+- `src/features/editor/pages/EditorPage.test.tsx`
+- 参考：`src/features/editor/store/useEditorStore.scenesRepository.test.ts`
+- 参考：`src/features/editor/store/useEditorStore.variablesRepository.test.ts`
+- 参考：`src/lib/store/useAutoSaveStore.ts`
+
+### 本地验证
+
+- `npm.cmd test -- src/lib/store/persistence.test.ts src/features/editor/store/useEditorStore.scenesRepository.test.ts src/features/editor/store/useEditorStore.variablesRepository.test.ts src/features/editor/pages/EditorPage.test.tsx`
+  - 结果：通过，4 files / 35 tests。
+- `npm.cmd test`
+  - 结果：通过，31 files / 145 tests。
+- `npm.cmd run build`
+  - 结果：通过；Vite chunk size warning 非本段阻断项。
+- `rg -n "persist\(|zustand/middleware" src/features/editor/store/useEditorStore.ts`
+  - 结果：无命中。
+
+### 审查清单
+
+- 需求字段完整性：通过，目标、范围、交付物和验证命令均已留痕。
+- 原始意图覆盖：通过，移除 useEditorStore 对 localStorage persist 的业务数据主责任，恢复路径改由 repository hydrate 证明。
+- 交付物映射：通过，代码、测试、操作日志和验证报告均已更新。
+- 依赖与风险评估：通过，保留 useAutoSaveStore 元状态 persist，避免把 autosave 提示状态误迁入业务 repository。
+
+### 技术评分
+
+- 代码质量：93/100。移除 wrapper 后 store 结构与其他业务 store 一致，业务数据持久化边界更清晰。
+- 测试覆盖：94/100。覆盖 persistence、scenes repository、variables repository、EditorPage hydrate 回归，并通过全量测试。
+- 规范遵循：93/100。执行 sequential-thinking、shrimp-task-manager、TDD RED/GREEN 与本地验证，并使用简体中文留痕。
+
+### 战略评分
+
+- 需求匹配：94/100。完成 repository 驱动收口的关键一步，不再让 editor 业务数据写入旧 localStorage key。
+- 架构一致：94/100。与 project/character/lore store 的普通 create + 显式 hydrate 模式对齐。
+- 风险评估：91/100。旧 `EDITOR_STORAGE_KEY` 常量仍保留，后续若需要旧草稿迁移/清理可单独规划。
+
+### 综合结论
+
+```Scoring
+score: 93
+```
+
+summary: 'V2 Step 7 useEditorStore localStorage persist 主责任收口已完成并通过本地验证；建议通过，后续可进入旧 key 迁移清理或总体验收收口。'
+
+## 结构治理增强：空场景提醒 + 问题分类 验证报告
+
+时间：2026-04-18 12:15:02
+
+### 结论
+
+- 综合评分：95/100
+- 建议：通过
+
+### 评估
+
+- 需求匹配：已覆盖空场景分类与问题过滤保留，且没有扩展到其他功能
+- 技术质量：沿用纯函数派生与页面消费结果的既有模式，测试粒度清晰
+- 集成兼容：仅新增测试覆盖，未影响现有图数据与页面渲染路径
+- 性能与可扩展性：未引入额外计算或新依赖，仍为线性派生与过滤
+
+### 验证结果
+
+- `npm.cmd test -- src/features/graph/lib/graphData.test.ts src/features/graph/lib/graphIssueCategories.test.ts src/features/graph/pages/GraphPage.test.tsx src/features/graph/pages/GraphPage.issueCategories.test.tsx`
+- 结果：通过，4 个测试文件全部通过，16 个测试全部通过
+
+### 备注
+
+- 当前仓库中空场景提醒与问题分类的业务能力已存在，本次工作主要补齐数据层测试覆盖，确保该结构治理能力可持续回归验证。
+
+## 项目首页快速继续创作入口 验证报告
+
+生成时间：2026-04-18 12:35:00
+
+### 审查范围
+
+- `src/features/projects/pages/ProjectHomePage.tsx`
+- `src/features/projects/pages/ProjectHomePage.test.tsx`
+
+### 本地验证
+
+- `npm.cmd test -- src/features/projects/pages/ProjectHomePage.test.tsx`
+  - 结果：通过，2 个测试全部通过。
+- `npm.cmd test`
+  - 结果：通过，31 files / 135 tests。
+- `npm.cmd run build`
+  - 结果：通过；Vite chunk size warning 为既有提示，非阻断项。
+
+### 审查清单
+
+- 需求字段完整性：通过，最近编辑展示、快捷入口行为与无场景空态均已覆盖。
+- 原始意图覆盖：通过，已落地“继续写作 / 打开分支图 / 从头预览”入口并与场景选择联动。
+- 交付物映射：通过，页面实现、测试、操作日志与验证报告均已更新。
+- 依赖与风险评估：通过，继续复用现有 store 与路由跳转链路，未引入新持久化层。
+
+### 技术评分
+
+- 代码质量：93/100。状态派生与跳转动作清晰，复用既有 store 能力。
+- 测试覆盖：92/100。覆盖最近编辑展示、三个快捷入口与空态。
+- 规范遵循：93/100。遵循页面与测试既有结构，中文留痕完整。
+
+### 战略评分
+
+- 需求匹配：94/100。满足路线图“快速继续创作入口”目标。
+- 架构一致：93/100。保持 feature 内聚，不新增跨层抽象。
+- 风险评估：91/100。最近编辑取值为前端派生，后续可按真实编辑时间进一步细化。
+
+### 综合结论
+
+```Scoring
+score: 93
+```
+
+summary: '项目首页快速继续创作入口已完成并通过本地验证；建议通过。'
+
+## 项目模板增强（最小模板收口）验证报告
+
+生成时间：2026-04-18 12:35:00
+
+### 审查范围
+
+- `src/features/projects/components/ProjectCreateForm.tsx`
+- `src/lib/domain/domain.test.ts`
+- `src/features/projects/pages/ProjectHomePage.test.tsx`
+
+### 本地验证
+
+- `npm.cmd test -- src/lib/domain/domain.test.ts src/features/projects/pages/ProjectHomePage.test.tsx`
+  - 结果：通过，2 个测试文件 / 10 个测试用例全部通过。
+- `npm.cmd test`
+  - 结果：通过，31 files / 135 tests。
+- `npm.cmd run build`
+  - 结果：通过；Vite chunk size warning 为既有提示，非阻断项。
+
+### 审查清单
+
+- 需求字段完整性：通过，模板入口与三类模板创建闭环均有测试覆盖。
+- 原始意图覆盖：通过，已覆盖线性短篇、多结局、共通线+角色线三类高频模板。
+- 交付物映射：通过，表单入口、领域测试、页面测试和操作日志均已更新。
+- 依赖与风险评估：通过，继续复用 `createEmptyProject` 链路，未新增额外模板引擎。
+
+### 技术评分
+
+- 代码质量：92/100。模板入口收口清晰，创建流程延续既有实现。
+- 测试覆盖：93/100。领域与页面双层验证模板结构与创建闭环。
+- 规范遵循：93/100。沿用项目测试模式与中文留痕规范。
+
+### 战略评分
+
+- 需求匹配：94/100。满足路线图“模板增强先覆盖三类模板”目标。
+- 架构一致：92/100。模板逻辑继续集中在 domain 工厂函数。
+- 风险评估：90/100。后续可评估是否保留/迁移 `blank` 内部默认模板语义。
+
+### 综合结论
+
+```Scoring
+score: 93
+```
+
+summary: '项目模板增强（最小模板收口）已完成并通过本地验证；建议通过。'

@@ -1,14 +1,6 @@
-export interface SceneLink {
-  id: string;
-  projectId: string;
-  fromSceneId: string;
-  toSceneId: string;
-  linkType: "default" | "choice" | "conditional" | "fallback";
-  sourceBlockId: string | null;
-  label: string;
-  conditionId: string | null;
-  priorityOrder: number;
-}
+import type { SceneLink } from "../../../lib/domain/link";
+
+export type { SceneLink };
 
 export function buildChoiceLink(input: {
   projectId: string;

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { AutoSaveStatus } from "../../../app/components/AutoSaveStatus";
 import { useProjectStore } from "../../projects/store/useProjectStore";
 import { SceneBlockList } from "../components/SceneBlockList";
@@ -13,6 +14,8 @@ export function EditorPage() {
   const importScene = useEditorStore((state) => state.importScene);
   const selectScene = useEditorStore((state) => state.selectScene);
   const createVariable = useEditorStore((state) => state.createVariable);
+  const hydrateScenes = useEditorStore((state) => state.hydrateScenes);
+  const hydrateVariables = useEditorStore((state) => state.hydrateVariables);
   const selectVariable = useEditorStore((state) => state.selectVariable);
   const deleteVariable = useEditorStore((state) => state.deleteVariable);
   const updateVariable = useEditorStore((state) => state.updateVariable);
@@ -32,8 +35,11 @@ export function EditorPage() {
   );
   const updateProjectScene = useProjectStore((state) => state.updateScene);
 
+  const visibleScenes = currentProject
+    ? scenes.filter((scene) => scene.projectId === currentProject.id)
+    : scenes;
   const selectedScene =
-    scenes.find((scene) => scene.id === selectedSceneId) ?? null;
+    visibleScenes.find((scene) => scene.id === selectedSceneId) ?? null;
   const projectVariables = currentProject
     ? variables.filter((variable) => variable.projectId === currentProject.id)
     : [];
@@ -42,12 +48,25 @@ export function EditorPage() {
     projectVariables[0] ??
     null;
 
+  useEffect(() => {
+    if (currentProject && projectVariables.length === 0) {
+      void hydrateVariables(currentProject.id);
+    }
+  }, [currentProject, projectVariables.length, hydrateVariables]);
+
+  useEffect(() => {
+    if (currentProject && visibleScenes.length === 0) {
+      void hydrateScenes(currentProject.id);
+    }
+  }, [currentProject, visibleScenes.length, hydrateScenes]);
+
   function handleSceneUpdate(
     sceneId: string,
     input: Parameters<typeof updateProjectScene>[1],
   ) {
     if (currentProject) {
       updateProjectScene(sceneId, input);
+      updateLocalScene(sceneId, input);
       return;
     }
 
@@ -76,7 +95,7 @@ export function EditorPage() {
       <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 16 }}>
         <SceneTree
           routes={currentProject?.routes}
-          scenes={scenes}
+          scenes={visibleScenes}
           selectedSceneId={selectedSceneId}
           onCreateScene={handleCreateScene}
           onSelectScene={selectScene}
@@ -249,13 +268,17 @@ export function EditorPage() {
                       status: event.target.value as
                         | "draft"
                         | "completed"
-                        | "needs_revision",
+                        | "needs_revision"
+                        | "needs_supplement"
+                        | "needs_logic_check",
                     })
                   }
                 >
                   <option value="draft">草稿</option>
                   <option value="completed">已完成</option>
                   <option value="needs_revision">需修改</option>
+                  <option value="needs_supplement">待补充</option>
+                  <option value="needs_logic_check">待检查逻辑</option>
                 </select>
               </label>
               <label>
@@ -305,7 +328,7 @@ export function EditorPage() {
             <SceneBlockList
               sceneId={selectedScene.id}
               blocks={selectedScene.blocks}
-              scenes={scenes}
+              scenes={visibleScenes}
               variables={projectVariables}
               onDeleteBlock={deleteBlock}
               onMoveBlockUp={moveBlockUp}

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useProjectStore } from "../../projects/store/useProjectStore";
 import { useLoreStore } from "../store/useLoreStore";
 import type { LoreEntry } from "../../../lib/domain/lore";
@@ -82,6 +83,7 @@ export function LorePage() {
   const currentProject = useProjectStore((state) => state.currentProject);
   const entries = useLoreStore((state) => state.entries);
   const selectedLoreId = useLoreStore((state) => state.selectedLoreId);
+  const hydrateLoreEntries = useLoreStore((state) => state.hydrateLoreEntries);
   const createLoreEntry = useLoreStore((state) => state.createLoreEntry);
   const selectLoreEntry = useLoreStore((state) => state.selectLoreEntry);
   const updateLoreEntry = useLoreStore((state) => state.updateLoreEntry);
@@ -97,6 +99,12 @@ export function LorePage() {
     currentProject && selectedEntry
       ? resolveLoreSceneAssociations(selectedEntry, currentProject.scenes)
       : [];
+
+  useEffect(() => {
+    if (currentProject && projectEntries.length === 0) {
+      void hydrateLoreEntries(currentProject.id);
+    }
+  }, [currentProject, projectEntries.length, hydrateLoreEntries]);
 
   return (
     <section>

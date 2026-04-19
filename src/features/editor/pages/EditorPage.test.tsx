@@ -1,10 +1,89 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { SceneBlock } from "../../../lib/domain/block";
+import type { Scene } from "../../../lib/domain/scene";
+import type { ProjectVariable } from "../../../lib/domain/variable";
+import {
+  resetReferenceRepositoryForTesting,
+  setReferenceRepositoryForTesting,
+} from "../../../lib/repositories/referenceRepositoryRuntime";
+import {
+  resetStoryRepositoryForTesting,
+  setStoryRepositoryForTesting,
+} from "../../../lib/repositories/storyRepositoryRuntime";
 import { useAutoSaveStore } from "../../../lib/store/useAutoSaveStore";
 import { useProjectStore } from "../../projects/store/useProjectStore";
 import { useEditorStore } from "../store/useEditorStore";
 import { EditorPage } from "./EditorPage";
+
+function createFakeReferenceRepository(initialVariables: ProjectVariable[] = []) {
+  const variables = new Map(
+    initialVariables.map((variable) => [variable.id, variable]),
+  );
+
+  return {
+    repository: {
+      listCharacters: vi.fn(async () => []),
+      saveCharacter: vi.fn(async () => undefined),
+      listLoreEntries: vi.fn(async () => []),
+      saveLoreEntry: vi.fn(async () => undefined),
+      listVariables: vi.fn(async (projectId: string) =>
+        [...variables.values()].filter((variable) => variable.projectId === projectId),
+      ),
+      saveVariable: vi.fn(async () => undefined),
+      saveVariables: vi.fn(async () => undefined),
+    },
+  };
+}
+
+function createScene(overrides: Partial<Scene> = {}): Scene {
+  return {
+    id: "scene-1",
+    projectId: "p1",
+    routeId: "route-1",
+    title: "旧校舍入口",
+    summary: "",
+    sceneType: "normal",
+    status: "draft",
+    chapterLabel: "",
+    sortOrder: 0,
+    isStartScene: true,
+    isEndingScene: false,
+    notes: "",
+    blocks: [],
+    ...overrides,
+  };
+}
+
+function createBlock(overrides: Partial<SceneBlock> = {}): SceneBlock {
+  return {
+    id: "block-1",
+    sceneId: "scene-1",
+    blockType: "narration",
+    sortOrder: 0,
+    characterId: null,
+    contentText: "雨夜里传来脚步声。",
+    metaJson: null,
+    ...overrides,
+  };
+}
+
+function createFakeStoryRepository(initialScenes: Scene[] = []) {
+  return {
+    repository: {
+      listScenes: vi.fn(async (projectId: string) =>
+        initialScenes.filter((scene) => scene.projectId === projectId),
+      ),
+      createScene: vi.fn(async () => createScene()),
+      updateScene: vi.fn(async () => undefined),
+      deleteScene: vi.fn(async () => undefined),
+      saveBlocks: vi.fn(async () => undefined),
+      listLinks: vi.fn(async () => []),
+      saveLinks: vi.fn(async () => undefined),
+    },
+  };
+}
 
 describe("EditorPage", () => {
   beforeEach(() => {
@@ -12,6 +91,8 @@ describe("EditorPage", () => {
     useProjectStore.getState().resetProject();
     useEditorStore.getState().resetEditor();
     useAutoSaveStore.getState().reset();
+    resetReferenceRepositoryForTesting();
+    resetStoryRepositoryForTesting();
     cleanup();
   });
 
@@ -39,21 +120,32 @@ describe("EditorPage", () => {
     expect(screen.getByRole("status")).toHaveTextContent("已自动保存");
   });
 
-  it("重载后会恢复已保存场景并显示恢复提示", async () => {
-    const { useEditorStore } = await import("../store/useEditorStore");
+  it("会从 repository 恢复已保存场景并显示恢复提示", async () => {
+    const project = {
+      id: "p1",
+      name: "雨夜回响",
+      summary: "",
+      projectType: "route_based" as const,
+      routes: [],
+      scenes: [],
+    };
+    const scene = createScene({
+      projectId: project.id,
+      title: "未命名场景 1",
+      blocks: [createBlock()],
+    });
+    const fake = createFakeStoryRepository([scene]);
+    setStoryRepositoryForTesting(fake.repository);
+    useProjectStore.setState({ currentProject: project });
+    useAutoSaveStore.getState().markSaved("2026-04-12T02:00:00.000Z");
 
-    useEditorStore.getState().createScene();
-    useEditorStore.getState().addBlock("narration");
+    render(<EditorPage />);
 
-    vi.resetModules();
-
-    const { EditorPage: ReloadedEditorPage } = await import("./EditorPage");
-
-    render(<ReloadedEditorPage />);
-
-    expect(screen.getByText("未命名场景 1")).toBeInTheDocument();
+    expect(await screen.findByText("未命名场景 1")).toBeInTheDocument();
     expect(screen.getByLabelText("旁白内容")).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("已恢复本地草稿");
+    await waitFor(() => {
+      expect(screen.getByRole("status")).toHaveTextContent("已恢复本地草稿");
+    });
   });
 
   it("允许在场景树中切换当前场景", async () => {
@@ -203,6 +295,55 @@ describe("EditorPage", () => {
     await user.selectOptions(screen.getByLabelText("条件运算"), "isTrue");
 
     expect(screen.getByLabelText("条件运算")).toHaveValue("isTrue");
+  });
+
+  it("当前项目已存在且项目变量为空时会自动 hydrate 变量", async () => {
+    const project = {
+      id: "p1",
+      name: "雨夜回响",
+      summary: "",
+      projectType: "route_based" as const,
+      routes: [],
+      scenes: [],
+    };
+    const fake = createFakeReferenceRepository([
+      {
+        id: "v1",
+        projectId: project.id,
+        name: "拥有钥匙",
+        variableType: "flag",
+        defaultValue: 1,
+      },
+    ]);
+    setReferenceRepositoryForTesting(fake.repository);
+    useProjectStore.setState({ currentProject: project });
+
+    render(<EditorPage />);
+
+    expect(await screen.findByRole("button", { name: "拥有钥匙" })).toBeInTheDocument();
+  });
+
+  it("当前项目已存在且编辑器场景为空时会自动 hydrate 场景正文", async () => {
+    const project = {
+      id: "p1",
+      name: "雨夜回响",
+      summary: "",
+      projectType: "route_based" as const,
+      routes: [],
+      scenes: [],
+    };
+    const scene = createScene({
+      projectId: project.id,
+      blocks: [createBlock()],
+    });
+    const fake = createFakeStoryRepository([scene]);
+    setStoryRepositoryForTesting(fake.repository);
+    useProjectStore.setState({ currentProject: project });
+
+    render(<EditorPage />);
+
+    expect(await screen.findByRole("button", { name: "旧校舍入口" })).toBeInTheDocument();
+    expect(screen.getByLabelText("旁白内容")).toHaveValue("雨夜里传来脚步声。");
   });
 
   it("允许为选项块配置变量副作用", async () => {
@@ -355,6 +496,30 @@ describe("EditorPage", () => {
     );
   });
 
+  it("场景状态下拉会提供完整的五种状态", async () => {
+    const user = userEvent.setup();
+
+    useProjectStore.getState().createProject("雨夜回响", "一段校园悬疑故事。");
+    const project = useProjectStore.getState().currentProject!;
+    const routeId = project.routes[0]!.id;
+    const scene = useProjectStore.getState().createSceneInRoute(routeId)!;
+    useEditorStore.getState().importScene(scene);
+    useEditorStore.getState().selectScene(scene.id);
+
+    render(<EditorPage />);
+
+    expect(screen.getByRole("option", { name: "草稿" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "已完成" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "需修改" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "待补充" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", { name: "待检查逻辑" }),
+    ).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText("场景状态"), "needs_supplement");
+    expect(screen.getByLabelText("场景状态")).toHaveValue("needs_supplement");
+  });
+
   it("删除当前选中场景时会切换到下一个可用场景并清理 links", async () => {
     const user = userEvent.setup();
 
@@ -406,7 +571,7 @@ describe("EditorPage", () => {
   it("删除变量时能清理引用并让选中变量回退到下一个", async () => {
     const user = userEvent.setup();
 
-    useProjectStore.getState().createProject("闆ㄥ鍥炲搷", "涓€娈垫牎鍥偓鐤戞晠浜?");
+    useProjectStore.getState().createProject("雨夜回响", "一段校园悬疑故事");
 
     render(<EditorPage />);
 
@@ -451,7 +616,7 @@ describe("EditorPage", () => {
   it("删除场景时能清空所有入口左右关联的 targetSceneId", async () => {
     const user = userEvent.setup();
 
-    useProjectStore.getState().createProject("闆ㄥ鍥炲搷", "涓€娈垫牎鍥偓鐤戞晠浜?");
+    useProjectStore.getState().createProject("雨夜回响", "一段校园悬疑故事");
     const project = useProjectStore.getState().currentProject!;
     const routeId = project.routes[0]!.id;
     const firstScene = useProjectStore.getState().createSceneInRoute(routeId)!;

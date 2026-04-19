@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AutoSaveStatus } from "../../../app/components/AutoSaveStatus";
+import type { Scene } from "../../../lib/domain/scene";
 import { useCharacterStore } from "../../characters/store/useCharacterStore";
 import { useEditorStore } from "../../editor/store/useEditorStore";
 import { useLoreStore } from "../../lore/store/useLoreStore";
@@ -13,7 +14,26 @@ const sceneStatusLabelMap = {
   draft: "草稿",
   completed: "已完成",
   needs_revision: "需修改",
+  needs_supplement: "待补充",
+  needs_logic_check: "待检查逻辑",
 } as const;
+
+function resolveRecentScene(scenes: Scene[], selectedSceneId: string | null) {
+  if (selectedSceneId) {
+    const selectedScene = scenes.find((scene) => scene.id === selectedSceneId);
+    if (selectedScene) {
+      return selectedScene;
+    }
+  }
+
+  return scenes[scenes.length - 1] ?? null;
+}
+
+function resolveStartScene(scenes: Scene[]) {
+  return (
+    scenes.find((scene) => scene.isStartScene) ?? scenes[0] ?? null
+  );
+}
 
 export function ProjectHomePage() {
   const navigate = useNavigate();
@@ -21,6 +41,9 @@ export function ProjectHomePage() {
   const [routeDrafts, setRouteDrafts] = useState<Record<string, string>>({});
   const [searchKeyword, setSearchKeyword] = useState("");
   const currentProject = useProjectStore((state) => state.currentProject);
+  const hydrateLatestProject = useProjectStore(
+    (state) => state.hydrateLatestProject,
+  );
   const createProject = useProjectStore((state) => state.createProject);
   const createRoute = useProjectStore((state) => state.createRoute);
   const renameRoute = useProjectStore((state) => state.renameRoute);
@@ -76,12 +99,10 @@ export function ProjectHomePage() {
     return left.title.localeCompare(right.title, "zh-CN");
   });
 
-  const continueScene =
-    availableScenes.find((scene) => scene.id === selectedSceneId) ??
-    availableScenes[0] ??
-    null;
-  const continueRoute =
-    sortedRoutes.find((route) => route.id === continueScene?.routeId) ?? null;
+  const recentScene = resolveRecentScene(availableScenes, selectedSceneId);
+  const startScene = resolveStartScene(availableScenes) ?? recentScene;
+  const recentRoute =
+    sortedRoutes.find((route) => route.id === recentScene?.routeId) ?? null;
 
   const searchResults =
     currentProject && searchKeyword.trim()
@@ -100,26 +121,32 @@ export function ProjectHomePage() {
         searchResults.loreResults.length > 0),
   );
 
+  useEffect(() => {
+    if (!currentProject) {
+      void hydrateLatestProject();
+    }
+  }, [currentProject, hydrateLatestProject]);
+
   function handleContinueWriting() {
-    if (!continueScene) {
+    if (!recentScene) {
       return;
     }
 
-    selectScene(continueScene.id);
+    selectScene(recentScene.id);
     navigate("/editor");
   }
 
   function handleOpenGraph() {
-    if (continueScene) {
-      selectScene(continueScene.id);
+    if (recentScene) {
+      selectScene(recentScene.id);
     }
 
     navigate("/graph");
   }
 
   function handleStartPreview() {
-    if (continueScene) {
-      selectScene(continueScene.id);
+    if (startScene) {
+      selectScene(startScene.id);
     }
 
     navigate("/preview");
@@ -152,15 +179,15 @@ export function ProjectHomePage() {
           ) : null}
           <section aria-label="最近编辑">
             <h4>最近编辑</h4>
-            {continueScene ? (
+            {recentScene ? (
               <div>
                 <p>
-                  <strong>{continueScene.title}</strong>
+                  <strong>{recentScene.title}</strong>
                 </p>
-                <p>所属路线：{continueRoute?.name ?? "未分配路线"}</p>
-                <p>当前状态：{sceneStatusLabelMap[continueScene.status]}</p>
-                <p>{continueScene.summary.trim() || "当前场景还没有摘要。"}</p>
-                <div>
+                <p>所属路线：{recentRoute?.name ?? "未分配路线"}</p>
+                <p>当前状态：{sceneStatusLabelMap[recentScene.status]}</p>
+                <p>{recentScene.summary.trim() || "当前场景还没有摘要。"}</p>
+                <div aria-label="快捷动作">
                   <button type="button" onClick={handleContinueWriting}>
                     继续写作
                   </button>

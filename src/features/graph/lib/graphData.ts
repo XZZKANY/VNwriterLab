@@ -16,6 +16,7 @@ export interface SceneGraphConditionSummary {
 
 export type SceneGraphIssueCode =
   | "emptyScene"
+  | "contentGap"
   | "noIncoming"
   | "noOutgoing"
   | "missingConditionVariable"
@@ -76,6 +77,20 @@ function createIssue(
   };
 }
 
+function hasMeaningfulSceneContent(scene: Scene) {
+  return scene.blocks.some((block) => {
+    if (block.blockType === "dialogue" || block.blockType === "narration") {
+      return block.contentText.trim().length > 0;
+    }
+
+    if (block.blockType === "choice") {
+      return parseChoiceBlockMeta(block.metaJson).label.trim().length > 0;
+    }
+
+    return false;
+  });
+}
+
 function collectSceneIssues(
   scene: Scene,
   sceneById: Map<string, Scene>,
@@ -88,6 +103,14 @@ function collectSceneIssues(
   if (scene.blocks.length === 0) {
     issues.push(
       createIssue("emptyScene", "空场景", "当前场景还没有任何内容块"),
+    );
+  } else if (!hasMeaningfulSceneContent(scene)) {
+    issues.push(
+      createIssue(
+        "contentGap",
+        "内容缺失",
+        "当前场景还没有任何有效正文或选项文案",
+      ),
     );
   }
 

@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import type { SceneBlock } from "../../../lib/domain/block";
 import type { Scene } from "../../../lib/domain/scene";
 import {
@@ -7,6 +6,8 @@ import {
   type ProjectVariable,
   type VariableType,
 } from "../../../lib/domain/variable";
+import { getReferenceRepository } from "../../../lib/repositories/referenceRepositoryRuntime";
+import { getStoryRepository } from "../../../lib/repositories/storyRepositoryRuntime";
 import { useAutoSaveStore } from "../../../lib/store/useAutoSaveStore";
 import {
   clearChoiceBlockEffectVariableId,
@@ -18,6 +19,11 @@ import {
   stringifyConditionBlockMeta,
   type ConditionBlockMeta,
 } from "./conditionBlock";
+import {
+  normalizeEditorSceneBlocks,
+  normalizeEditorScenesByRoute,
+  sortEditorScenesByRouteAndOrder,
+} from "./editorSceneUtils";
 import { buildChoiceLink, type SceneLink } from "./linkUtils";
 
 interface EditorState {
@@ -26,6 +32,8 @@ interface EditorState {
   links: SceneLink[];
   variables: ProjectVariable[];
   selectedVariableId: string | null;
+  hydrateScenes: (projectId: string) => Promise<void>;
+  hydrateVariables: (projectId: string) => Promise<void>;
   createScene: (input?: { projectId?: string; routeId?: string }) => void;
   importScene: (scene: Scene) => void;
   selectScene: (sceneId: string) => void;
@@ -90,10 +98,101 @@ const initialState = {
   selectedVariableId: null as string | null,
 };
 
-export const useEditorStore = create<EditorState>()(
-  persist(
-    (set, get) => ({
+function saveProjectVariablesSnapshot(projectId: string, variables: ProjectVariable[]) {
+  const projectVariables = variables.filter(
+    (variable) => variable.projectId === projectId,
+  );
+
+  void getReferenceRepository().saveVariables(projectId, projectVariables);
+}
+
+function saveSceneSnapshot(sceneId: string, scenes: Scene[]) {
+  const scene = scenes.find((item) => item.id === sceneId);
+  if (!scene) {
+    return;
+  }
+
+  void getStoryRepository().updateScene(scene);
+}
+
+function saveSceneBlocksSnapshot(sceneId: string, scenes: Scene[]) {
+  const scene = scenes.find((item) => item.id === sceneId);
+  if (!scene) {
+    return;
+  }
+
+  void getStoryRepository().saveBlocks(sceneId, scene.blocks);
+}
+
+function saveProjectLinksSnapshot(projectId: string, links: SceneLink[]) {
+  const projectLinks = links.filter((link) => link.projectId === projectId);
+
+  void getStoryRepository().saveLinks(projectId, projectLinks);
+}
+
+export const useEditorStore = create<EditorState>()((set, get) => ({
       ...initialState,
+      hydrateScenes: async (projectId) => {
+        const trimmedProjectId = projectId.trim();
+        if (!trimmedProjectId) {
+          useAutoSaveStore.getState().markHydrated(false);
+          return;
+        }
+
+        const repository = getStoryRepository();
+        const [projectScenes, projectLinks] = await Promise.all([
+          repository.listScenes(trimmedProjectId),
+          repository.listLinks(trimmedProjectId),
+        ]);
+        const otherScenes = get().scenes.filter(
+          (scene) => scene.projectId !== trimmedProjectId,
+        );
+        const otherLinks = get().links.filter(
+          (link) => link.projectId !== trimmedProjectId,
+        );
+        const currentSelectedSceneId = get().selectedSceneId;
+        const nextSelectedSceneId =
+          currentSelectedSceneId &&
+          projectScenes.some((scene) => scene.id === currentSelectedSceneId)
+            ? currentSelectedSceneId
+            : projectScenes[0]?.id ?? null;
+
+        set({
+          scenes: [...otherScenes, ...projectScenes],
+          links: [...otherLinks, ...projectLinks],
+          selectedSceneId: nextSelectedSceneId,
+        });
+
+        useAutoSaveStore.getState().markHydrated(projectScenes.length > 0);
+      },
+      hydrateVariables: async (projectId) => {
+        const trimmedProjectId = projectId.trim();
+        if (!trimmedProjectId) {
+          useAutoSaveStore.getState().markHydrated(false);
+          return;
+        }
+
+        const projectVariables =
+          await getReferenceRepository().listVariables(trimmedProjectId);
+        const otherVariables = get().variables.filter(
+          (variable) => variable.projectId !== trimmedProjectId,
+        );
+        const currentSelectedVariableId = get().selectedVariableId;
+        const nextSelectedVariableId =
+          currentSelectedVariableId &&
+          projectVariables.some(
+            (variable) => variable.id === currentSelectedVariableId,
+          )
+            ? currentSelectedVariableId
+            : projectVariables[0]?.id ?? null;
+
+        set({
+          variables: [...otherVariables, ...projectVariables],
+          selectedVariableId: nextSelectedVariableId,
+        });
+
+        useAutoSaveStore.getState().markHydrated(projectVariables.length > 0);
+      },
       createScene: (input) => {
         useAutoSaveStore.getState().markDirty();
 
@@ -145,13 +244,16 @@ export const useEditorStore = create<EditorState>()(
 
         useAutoSaveStore.getState().markDirty();
 
-        set({
-          scenes: get().scenes.map((scene) =>
+        const nextScenes = get().scenes.map((scene) =>
             scene.id === sceneId ? { ...scene, ...input } : scene,
-          ),
+          );
+
+        set({
+          scenes: nextScenes,
         });
 
         useAutoSaveStore.getState().markSaved();
+        saveSceneSnapshot(sceneId, nextScenes);
       },
       deleteScene: (sceneId) => {
         const targetScene = get().scenes.find((scene) => scene.id === sceneId);
@@ -161,7 +263,7 @@ export const useEditorStore = create<EditorState>()(
 
         useAutoSaveStore.getState().markDirty();
 
-        const orderedScenes = sortScenesByRouteAndOrder(get().scenes);
+        const orderedScenes = sortEditorScenesByRouteAndOrder(get().scenes);
         const deletedIndex = orderedScenes.findIndex((scene) => scene.id === sceneId);
         const remainingScenes = orderedScenes.filter((scene) => scene.id !== sceneId);
         const nextSelectedSceneId =
@@ -171,7 +273,7 @@ export const useEditorStore = create<EditorState>()(
               null
             : get().selectedSceneId;
 
-        const nextScenes = normalizeScenesByRoute(remainingScenes).map((scene) => ({
+        const nextScenes = normalizeEditorScenesByRoute(remainingScenes).map((scene) => ({
           ...scene,
           blocks: scene.blocks.map((block) => {
             if (block.blockType === "choice") {
@@ -198,6 +300,7 @@ export const useEditorStore = create<EditorState>()(
         });
 
         useAutoSaveStore.getState().markSaved();
+        saveProjectLinksSnapshot(targetScene.projectId, get().links);
       },
       createVariable: (projectId) => {
         const trimmedProjectId = projectId.trim();
@@ -220,6 +323,7 @@ export const useEditorStore = create<EditorState>()(
         });
 
         useAutoSaveStore.getState().markSaved();
+        saveProjectVariablesSnapshot(trimmedProjectId, get().variables);
 
         return nextVariable;
       },
@@ -247,8 +351,12 @@ export const useEditorStore = create<EditorState>()(
             ? projectVariables[deletedIndex + 1]?.id ?? null
             : get().selectedVariableId;
 
+        const nextVariables = get().variables.filter(
+          (variable) => variable.id !== variableId,
+        );
+
         set({
-          variables: get().variables.filter((variable) => variable.id !== variableId),
+          variables: nextVariables,
           selectedVariableId: nextSelectedVariableId,
           scenes: get().scenes.map((scene) => ({
             ...scene,
@@ -285,6 +393,7 @@ export const useEditorStore = create<EditorState>()(
         });
 
         useAutoSaveStore.getState().markSaved();
+        saveProjectVariablesSnapshot(targetVariable.projectId, nextVariables);
       },
       updateVariable: (variableId, input) => {
         const targetVariable = get().variables.find(
@@ -296,8 +405,7 @@ export const useEditorStore = create<EditorState>()(
 
         useAutoSaveStore.getState().markDirty();
 
-        set({
-          variables: get().variables.map((variable) => {
+        const nextVariables = get().variables.map((variable) => {
             if (variable.id !== variableId) {
               return variable;
             }
@@ -318,10 +426,14 @@ export const useEditorStore = create<EditorState>()(
                     : 0
                   : rawDefaultValue,
             };
-          }),
+          });
+
+        set({
+          variables: nextVariables,
         });
 
         useAutoSaveStore.getState().markSaved();
+        saveProjectVariablesSnapshot(targetVariable.projectId, nextVariables);
       },
       addBlock: (blockType) => {
         const { scenes, selectedSceneId } = get();
@@ -331,8 +443,7 @@ export const useEditorStore = create<EditorState>()(
 
         useAutoSaveStore.getState().markDirty();
 
-        set({
-          scenes: scenes.map((scene) =>
+        const nextScenes = scenes.map((scene) =>
             scene.id === selectedSceneId
               ? {
                   ...scene,
@@ -361,10 +472,14 @@ export const useEditorStore = create<EditorState>()(
                   ],
                 }
               : scene,
-          ),
+          );
+
+        set({
+          scenes: nextScenes,
         });
 
         useAutoSaveStore.getState().markSaved();
+        saveSceneBlocksSnapshot(selectedSceneId, nextScenes);
       },
       deleteBlock: (sceneId, blockId) => {
         const scene = get().scenes.find((item) => item.id === sceneId);
@@ -381,19 +496,23 @@ export const useEditorStore = create<EditorState>()(
             ? get().links.filter((link) => link.sourceBlockId !== blockId)
             : get().links;
 
-        set({
-          scenes: get().scenes.map((item) =>
+        const nextScenes = get().scenes.map((item) =>
             item.id === sceneId
               ? {
                   ...item,
-                  blocks: normalizeSceneBlocks(nextBlocks),
+                  blocks: normalizeEditorSceneBlocks(nextBlocks),
                 }
               : item,
-          ),
+          );
+
+        set({
+          scenes: nextScenes,
           links: nextLinks,
         });
 
         useAutoSaveStore.getState().markSaved();
+        saveSceneBlocksSnapshot(sceneId, nextScenes);
+        saveProjectLinksSnapshot(scene.projectId, nextLinks);
       },
       moveBlockUp: (sceneId, blockId) => {
         const scene = get().scenes.find((item) => item.id === sceneId);
@@ -418,18 +537,21 @@ export const useEditorStore = create<EditorState>()(
         nextBlocks[currentIndex - 1] = currentBlock;
         nextBlocks[currentIndex] = previousBlock;
 
-        set({
-          scenes: get().scenes.map((item) =>
+        const nextScenes = get().scenes.map((item) =>
             item.id === sceneId
               ? {
                   ...item,
-                  blocks: normalizeSceneBlocks(nextBlocks),
+                  blocks: normalizeEditorSceneBlocks(nextBlocks),
                 }
               : item,
-          ),
+          );
+
+        set({
+          scenes: nextScenes,
         });
 
         useAutoSaveStore.getState().markSaved();
+        saveSceneBlocksSnapshot(sceneId, nextScenes);
       },
       moveBlockDown: (sceneId, blockId) => {
         const scene = get().scenes.find((item) => item.id === sceneId);
@@ -454,24 +576,26 @@ export const useEditorStore = create<EditorState>()(
         nextBlocks[currentIndex] = nextBlock;
         nextBlocks[currentIndex + 1] = currentBlock;
 
-        set({
-          scenes: get().scenes.map((item) =>
+        const nextScenes = get().scenes.map((item) =>
             item.id === sceneId
               ? {
                   ...item,
-                  blocks: normalizeSceneBlocks(nextBlocks),
+                  blocks: normalizeEditorSceneBlocks(nextBlocks),
                 }
               : item,
-          ),
+          );
+
+        set({
+          scenes: nextScenes,
         });
 
         useAutoSaveStore.getState().markSaved();
+        saveSceneBlocksSnapshot(sceneId, nextScenes);
       },
       updateBlockContent: (sceneId, blockId, contentText) => {
         useAutoSaveStore.getState().markDirty();
 
-        set({
-          scenes: get().scenes.map((scene) =>
+        const nextScenes = get().scenes.map((scene) =>
             scene.id === sceneId
               ? {
                   ...scene,
@@ -480,10 +604,14 @@ export const useEditorStore = create<EditorState>()(
                   ),
                 }
               : scene,
-          ),
+          );
+
+        set({
+          scenes: nextScenes,
         });
 
         useAutoSaveStore.getState().markSaved();
+        saveSceneBlocksSnapshot(sceneId, nextScenes);
       },
       updateChoiceBlock: (sceneId, blockId, input) => {
         const scene = get().scenes.find((item) => item.id === sceneId);
@@ -516,8 +644,7 @@ export const useEditorStore = create<EditorState>()(
           );
         }
 
-        set({
-          scenes: get().scenes.map((item) =>
+        const nextScenes = get().scenes.map((item) =>
             item.id === sceneId
               ? {
                   ...item,
@@ -532,11 +659,16 @@ export const useEditorStore = create<EditorState>()(
                   ),
                 }
               : item,
-          ),
+          );
+
+        set({
+          scenes: nextScenes,
           links: nextLinks,
         });
 
         useAutoSaveStore.getState().markSaved();
+        saveSceneBlocksSnapshot(sceneId, nextScenes);
+        saveProjectLinksSnapshot(scene.projectId, nextLinks);
       },
       updateConditionBlock: (sceneId, blockId, input) => {
         const scene = get().scenes.find((item) => item.id === sceneId);
@@ -549,8 +681,7 @@ export const useEditorStore = create<EditorState>()(
 
         const nextMeta = stringifyConditionBlockMeta(input);
 
-        set({
-          scenes: get().scenes.map((item) =>
+        const nextScenes = get().scenes.map((item) =>
             item.id === sceneId
               ? {
                   ...item,
@@ -564,80 +695,14 @@ export const useEditorStore = create<EditorState>()(
                   ),
                 }
               : item,
-          ),
+          );
+
+        set({
+          scenes: nextScenes,
         });
 
         useAutoSaveStore.getState().markSaved();
+        saveSceneBlocksSnapshot(sceneId, nextScenes);
       },
-      resetEditor: () => set(initialState),
-    }),
-    {
-      name: EDITOR_STORAGE_KEY,
-      partialize: (state) => ({
-        scenes: state.scenes,
-        selectedSceneId: state.selectedSceneId,
-        links: state.links,
-        variables: state.variables,
-        selectedVariableId: state.selectedVariableId,
-      }),
-      onRehydrateStorage: () => {
-        const restored = localStorage.getItem(EDITOR_STORAGE_KEY) !== null;
-
-        return () => {
-          useAutoSaveStore.getState().markHydrated(restored);
-        };
-      },
-    },
-  ),
-);
-
-function normalizeSceneBlocks(blocks: SceneBlock[]) {
-  return blocks.map((block, index) => ({
-    ...block,
-    sortOrder: index,
-  }));
-}
-
-function sortScenesByRouteAndOrder(scenes: Scene[]) {
-  return [...scenes].sort((left, right) => {
-    if (left.routeId !== right.routeId) {
-      return left.routeId.localeCompare(right.routeId);
-    }
-
-    if (left.sortOrder !== right.sortOrder) {
-      return left.sortOrder - right.sortOrder;
-    }
-
-    return left.id.localeCompare(right.id);
-  });
-}
-
-function normalizeScenesByRoute(scenes: Scene[]) {
-  const scenesByRoute = new Map<string, Scene[]>();
-
-  for (const scene of scenes) {
-    const currentScenes = scenesByRoute.get(scene.routeId) ?? [];
-    currentScenes.push(scene);
-    scenesByRoute.set(scene.routeId, currentScenes);
-  }
-
-  return [...scenesByRoute.entries()]
-    .sort(([leftRouteId], [rightRouteId]) =>
-      leftRouteId.localeCompare(rightRouteId),
-    )
-    .flatMap(([, routeScenes]) =>
-      routeScenes
-        .sort((left, right) => {
-          if (left.sortOrder !== right.sortOrder) {
-            return left.sortOrder - right.sortOrder;
-          }
-
-          return left.id.localeCompare(right.id);
-        })
-        .map((scene, index) => ({
-          ...scene,
-          sortOrder: index,
-          isStartScene: index === 0,
-        })),
-    );
-}
+  resetEditor: () => set(initialState),
+}));

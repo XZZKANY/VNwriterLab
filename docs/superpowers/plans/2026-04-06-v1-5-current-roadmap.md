@@ -89,3 +89,23 @@
 - 如果结构治理直接写进页面组件，规则会再次分散，后续难以维护
 - 如果模板能力过早做深，容易越界到 V2 的“复杂项目脚手架”
 - 如果首页快速入口没有和现有 store 真实状态对齐，会出现“入口存在但跳转无效”的伪闭环
+
+## 2026-04-18 收口更新
+
+### 已收口项
+
+- 方向 1：结构治理增强已补齐空场景提醒与问题分类（含“只看问题节点”过滤保留回归）
+- 方向 2：项目模板增强已覆盖三类模板入口与初始化（线性短篇 / 多结局 / 共通线+角色线）
+- 方向 3：项目首页已新增最近编辑与快捷入口（继续写作 / 打开分支图 / 从头预览）
+
+### 对应验证
+
+- `npm.cmd test -- src/features/graph/lib/graphData.test.ts src/features/graph/lib/graphIssueCategories.test.ts src/features/graph/pages/GraphPage.test.tsx src/features/graph/pages/GraphPage.issueCategories.test.tsx`
+- `npm.cmd test -- src/lib/domain/domain.test.ts src/features/projects/pages/ProjectHomePage.test.tsx`
+- `npm.cmd test`
+- `npm.cmd run build`
+
+### 下一步建议
+
+- 进入“总体验收收口”，优先完成文档与提交切分，避免多方向改动混在同一提交。
+- 评估是否保留 `blank` 模板作为内部默认语义，若保留需在文档中明确其仅作内部兜底、不在创建表单暴露。

@@ -1,11 +1,78 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, vi } from "vitest";
+import type { Project, ProjectTemplate } from "../../../lib/domain/project";
+import type { LoreEntry } from "../../../lib/domain/lore";
+import { resetProjectRepositoryForTesting } from "../../../lib/repositories/projectRepositoryRuntime";
+import {
+  resetReferenceRepositoryForTesting,
+  setReferenceRepositoryForTesting,
+} from "../../../lib/repositories/referenceRepositoryRuntime";
 import { useAutoSaveStore } from "../../../lib/store/useAutoSaveStore";
 import type { Scene } from "../../../lib/domain/scene";
 import { useProjectStore } from "../../projects/store/useProjectStore";
 import { useLoreStore } from "../store/useLoreStore";
 import { LorePage } from "./LorePage";
+
+function createFakeProjectRepository(initialProjects: Project[] = []) {
+  const projects = new Map(initialProjects.map((project) => [project.id, project]));
+  const listProjects = vi.fn(async () => [...projects.values()]);
+  const getProject = vi.fn(async (projectId: string) => projects.get(projectId) ?? null);
+  const createProject = vi.fn(
+    async (input: {
+      name: string;
+      summary: string;
+      template?: ProjectTemplate;
+      project?: Project;
+    }) => {
+      const project = input.project!;
+      projects.set(project.id, project);
+      return project;
+    },
+  );
+  const updateProject = vi.fn(async (project: Project) => {
+    projects.set(project.id, project);
+  });
+
+  return {
+    repository: {
+      listProjects,
+      getProject,
+      createProject,
+      updateProject,
+    },
+  };
+}
+
+function createFakeReferenceRepository() {
+  const entries = new Map<string, LoreEntry>();
+
+  return {
+    repository: {
+      listCharacters: vi.fn(async () => []),
+      saveCharacter: vi.fn(async () => undefined),
+      listLoreEntries: vi.fn(async (projectId: string) =>
+        [...entries.values()].filter((entry) => entry.projectId === projectId),
+      ),
+      saveLoreEntry: vi.fn(async (entry: LoreEntry) => {
+        entries.set(entry.id, entry);
+      }),
+      listVariables: vi.fn(async () => []),
+      saveVariable: vi.fn(async () => undefined),
+      saveVariables: vi.fn(async () => undefined),
+    },
+    seedLoreEntry(projectId = "p1") {
+      entries.set("l1", {
+        id: "l1",
+        projectId,
+        name: "旧校舍",
+        category: "location",
+        description: "深夜会传来脚步声。",
+        tags: [],
+      });
+    },
+  };
+}
 
 function createScene(input: {
   id: string;
@@ -38,6 +105,8 @@ describe("LorePage", () => {
     useProjectStore.getState().resetProject();
     useLoreStore.getState().resetLoreEntries();
     useAutoSaveStore.getState().reset();
+    resetProjectRepositoryForTesting();
+    resetReferenceRepositoryForTesting();
   });
 
   it("显示设定页标题与新建设定入口", () => {
@@ -80,6 +149,10 @@ describe("LorePage", () => {
   });
 
   it("重载后会恢复设定列表与当前详情", async () => {
+    const fake = createFakeProjectRepository();
+    const runtime = await import("../../../lib/repositories/projectRepositoryRuntime");
+    runtime.setProjectRepositoryForTesting(fake.repository);
+    const fakeReference = createFakeReferenceRepository();
     useProjectStore.getState().createProject("雨夜回响", "一段校园悬疑故事");
 
     const currentProject = useProjectStore.getState().currentProject;
@@ -95,15 +168,48 @@ describe("LorePage", () => {
     useLoreStore.getState().updateLoreEntry(firstLore.id, {
       name: "旧校舍",
     });
+    fakeReference.seedLoreEntry(currentProject.id);
 
     vi.resetModules();
+    const reloadedRuntime = await import("../../../lib/repositories/projectRepositoryRuntime");
+    reloadedRuntime.setProjectRepositoryForTesting(fake.repository);
+    const reloadedReferenceRuntime = await import(
+      "../../../lib/repositories/referenceRepositoryRuntime"
+    );
+    reloadedReferenceRuntime.setReferenceRepositoryForTesting(
+      fakeReference.repository,
+    );
+    const { useProjectStore: reloadedProjectStore } = await import(
+      "../../projects/store/useProjectStore"
+    );
+    await reloadedProjectStore.getState().hydrateLatestProject();
 
     const { LorePage: ReloadedLorePage } = await import("./LorePage");
 
     render(<ReloadedLorePage />);
 
-    expect(screen.getByRole("button", { name: "旧校舍" })).toBeInTheDocument();
-    expect(screen.getByDisplayValue("旧校舍")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "旧校舍" })).toBeInTheDocument();
+    expect(await screen.findByDisplayValue("旧校舍")).toBeInTheDocument();
+  });
+
+  it("当前项目已存在且设定列表为空时会自动 hydrate 设定", async () => {
+    const fake = createFakeReferenceRepository();
+    fake.seedLoreEntry();
+    setReferenceRepositoryForTesting(fake.repository);
+    useProjectStore.setState({
+      currentProject: {
+        id: "p1",
+        name: "雨夜回响",
+        summary: "",
+        projectType: "route_based",
+        routes: [],
+        scenes: [],
+      },
+    });
+
+    render(<LorePage />);
+
+    expect(await screen.findByRole("button", { name: "旧校舍" })).toBeInTheDocument();
   });
 
   it("会展示与当前设定命中的场景基础关联", async () => {
