@@ -8,6 +8,7 @@ const navigationItems: Array<{
   { to: "/", label: "项目首页", end: true },
   { to: "/editor", label: "剧情编辑" },
   { to: "/graph", label: "分支图" },
+  { to: "/views", label: "多视图" },
   { to: "/characters", label: "角色" },
   { to: "/lore", label: "设定" },
   { to: "/preview", label: "预览" },

@@ -1265,3 +1265,121 @@ score: 93
 ```
 
 summary: '项目模板增强（最小模板收口）已完成并通过本地验证；建议通过。'
+
+## V2模块化实施计划书（当前进度到最终目标）验证报告
+
+生成时间：2026-04-19 19:39:00
+
+### 审查范围
+
+- `V2模块化实施计划书（当前进度到最终目标）.md`
+- `.codex/context-summary-v2-模块化实施计划书.md`
+- `.codex/operations-log.md`
+
+### 本地验证
+
+- 文件存在性校验：`V2模块化实施计划书（当前进度到最终目标）.md` 已创建于仓库根目录。
+- 内容回读校验：已确认包含模块目标、功能清单、输入输出、依赖、验收、风险、回滚。
+
+### 审查清单
+
+- 需求字段完整性：通过，计划书明确从“当前进度”到“V2最终目标”的完整路径。
+- 原始意图覆盖：通过，采用按模块规划，不按周拆分。
+- 交付物映射：通过，计划书文件、上下文摘要、操作日志均已落盘。
+- 依赖与风险评估：通过，给出关键路径与风险矩阵。
+
+### 技术评分
+
+- 代码质量：92/100（文档结构化程度高，模块接口边界清晰）。
+- 测试覆盖：88/100（本次为规划文档交付，采用文件与内容校验）。
+- 规范遵循：93/100（中文输出、留痕、路径与命名均符合仓库约定）。
+
+### 战略评分
+
+- 需求匹配：95/100（直接回应“更细化、按模块、落地文件”）。
+- 架构一致：92/100（保持现有 feature/store/派生模型约束）。
+- 风险评估：91/100（提供风险触发信号与回滚策略）。
+
+### 综合结论
+
+```Scoring
+score: 92
+```
+
+summary: '已生成更细化的模块化实施计划书并保存到仓库根目录，内容覆盖模块目标、功能清单、依赖、验收和风险回滚，建议通过。'
+
+## V2模块化实施计划书批量执行 - 检查点验证报告（2026-04-19）
+
+### 审查范围
+
+- M1：伏笔追踪（注释块元数据 + 图问题识别）
+- M2：高级条件（all/any 组合语义 + 预览执行一致性）
+- M3：多视图（大纲视图）
+- M4：导出能力（JSON / 纯文本 / 引擎草稿）
+
+### 本地验证结果
+
+- 定向测试：
+  - `npm.cmd test -- src/features/editor/store/conditionBlock.test.ts src/features/editor/store/noteBlock.test.ts src/features/preview/lib/previewEngine.test.ts src/features/graph/lib/graphData.test.ts src/features/editor/pages/EditorPage.test.tsx src/features/projects/pages/ProjectHomePage.test.tsx src/features/views/lib/outlineView.test.ts src/features/views/pages/ViewsPage.test.tsx src/features/projects/lib/projectExport.test.ts`
+  - 结果：通过（9 files / 50 tests）。
+- 全量测试：`npm.cmd test`
+  - 结果：通过（36 files / 152 tests）。
+- 构建验证：`npm.cmd run build`
+  - 结果：通过（保留既有 chunk size warning，不阻断）。
+
+### 审查清单
+
+- 需求字段完整性：通过，覆盖模块目标、功能入口、测试与验证。
+- 原始意图覆盖：通过，按模块批量执行并给出检查点验证。
+- 交付物映射：通过，代码、测试、日志、验证报告均落盘。
+- 依赖与风险评估：通过，保持单数据源并记录既有 act 警告。
+
+### 评分
+
+- 技术维度（代码质量/测试覆盖/规范遵循）：92
+- 战略维度（需求匹配/架构一致/风险评估）：91
+
+```Scoring
+score: 92
+```
+
+summary: '本批次已完成 M1-M4 的核心能力落地并通过检查点验证，建议进入下一批次（M5 稳定性收敛 + M6 发布收口）。'
+
+## 检查点补充（M5）
+
+- 变更：`src/features/graph/pages/GraphPage.tsx` 增加 `useMemo` 缓存 graph 派生，减少重复计算。
+- 定向验证：`GraphPage.test.tsx` + `GraphPage.issueCategories.test.tsx` 全通过。
+- 全量验证：`npm.cmd test` 全通过（36 files / 152 tests）。
+- 构建验证：`npm.cmd run build` 通过。
+
+## V2模块化实施计划书批量执行 - M5/M6最终验收报告（2026-04-19）
+
+### 审查范围
+
+- `src/main.tsx`
+- `V2模块化实施计划书（当前进度到最终目标）.md`
+- `.codex/operations-log.md`
+
+### 本地验证
+
+- `npm.cmd test -- src/features/editor/pages/EditorPage.test.tsx`：通过（1 file / 22 tests），未复现 `act(...)` warning。
+- `npm.cmd test`：通过（36 files / 152 tests）。
+- `npm.cmd run build`：通过；主包由 `508.51 kB` 收敛到 `286.20 kB`，chunk size warning 消失。
+
+### 审查清单
+
+- 需求字段完整性：通过，已完成“批量执行 + 检查点验证 + 收口留痕”。
+- 原始意图覆盖：通过，M5与M6均已进入完成态并写入计划书。
+- 交付物映射：通过，代码、计划书、操作日志、验证报告已同步。
+- 依赖与风险评估：通过，路由懒加载仅影响入口装配，不改变业务 store 与数据契约。
+
+### 评分
+
+- 技术维度（代码质量/测试覆盖/规范遵循）：95
+- 战略维度（需求匹配/架构一致/风险评估）：94
+
+```Scoring
+score: 95
+```
+
+summary: 'M5性能收敛与M6发布收口已完成：路由级拆包显著降低主包体积并消除构建告警，全量测试与构建验证通过，建议通过并进入下一阶段需求。'

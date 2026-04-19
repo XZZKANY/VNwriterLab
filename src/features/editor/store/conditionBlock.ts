@@ -6,8 +6,11 @@ export interface ConditionBlockItem {
   compareValue: number;
 }
 
+export type ConditionLogicMode = "all" | "any";
+
 export interface ConditionBlockMeta {
   conditions: ConditionBlockItem[];
+  logicMode?: ConditionLogicMode;
 }
 
 export function createDefaultConditionItem(): ConditionBlockItem {
@@ -20,6 +23,7 @@ export function createDefaultConditionItem(): ConditionBlockItem {
 
 export function createDefaultConditionBlockMeta(): ConditionBlockMeta {
   return {
+    logicMode: "all",
     conditions: [createDefaultConditionItem()],
   };
 }
@@ -35,6 +39,10 @@ function normalizeConditionItem(
   };
 }
 
+function normalizeLogicMode(value: unknown): ConditionLogicMode {
+  return value === "any" ? "any" : "all";
+}
+
 export function parseConditionBlockMeta(
   metaJson: string | null,
 ): ConditionBlockMeta {
@@ -47,6 +55,7 @@ export function parseConditionBlockMeta(
 
     if (Array.isArray(parsed.conditions)) {
       return {
+        logicMode: normalizeLogicMode(parsed.logicMode),
         conditions: parsed.conditions.map((item) =>
           normalizeConditionItem(item as Partial<ConditionBlockItem>),
         ),
@@ -54,6 +63,7 @@ export function parseConditionBlockMeta(
     }
 
     return {
+      logicMode: normalizeLogicMode(parsed.logicMode),
       conditions: [normalizeConditionItem(parsed as Partial<ConditionBlockItem>)],
     };
   } catch {
@@ -63,6 +73,7 @@ export function parseConditionBlockMeta(
 
 export function stringifyConditionBlockMeta(input: ConditionBlockMeta) {
   return JSON.stringify({
+    logicMode: normalizeLogicMode(input.logicMode),
     conditions: input.conditions.map((item) => normalizeConditionItem(item)),
   });
 }
@@ -96,6 +107,7 @@ export function clearConditionBlockVariableId(
   }
 
   return stringifyConditionBlockMeta({
+    logicMode: parsed.logicMode,
     conditions,
   });
 }

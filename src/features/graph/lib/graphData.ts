@@ -3,6 +3,7 @@ import type { Scene } from "../../../lib/domain/scene";
 import type { ProjectVariable } from "../../../lib/domain/variable";
 import { parseChoiceBlockMeta } from "../../editor/store/choiceBlock";
 import { parseConditionBlockMeta } from "../../editor/store/conditionBlock";
+import { parseNoteBlockMeta } from "../../editor/store/noteBlock";
 import type { SceneLink } from "../../editor/store/linkUtils";
 import type { Edge, Node } from "reactflow";
 
@@ -19,6 +20,7 @@ export type SceneGraphIssueCode =
   | "contentGap"
   | "noIncoming"
   | "noOutgoing"
+  | "unresolvedForeshadow"
   | "missingConditionVariable"
   | "deletedConditionVariable"
   | "missingTargetScene"
@@ -97,6 +99,7 @@ function collectSceneIssues(
   variablesById: Map<string, ProjectVariable>,
   incomingCount: number,
   outgoingCount: number,
+  unresolvedForeshadowMessages: string[],
 ) {
   const issues: SceneGraphIssue[] = [];
 
@@ -125,6 +128,10 @@ function collectSceneIssues(
       createIssue("noIncoming", "无入边", "没有任何入边且不是起始场景"),
     );
   }
+
+  unresolvedForeshadowMessages.forEach((message) => {
+    issues.push(createIssue("unresolvedForeshadow", "伏笔未回收", message));
+  });
 
   const sortedBlocks = [...scene.blocks].sort(
     (left, right) => left.sortOrder - right.sortOrder,
@@ -196,7 +203,7 @@ function formatConditionSummary(
     return "无条件";
   }
 
-  return condition.conditions
+  const content = condition.conditions
     .map((item) => {
       const variable = item.variableId
         ? variablesById.get(item.variableId) ?? null
@@ -211,6 +218,58 @@ function formatConditionSummary(
       return `${variableName} 为真`;
     })
     .join("；");
+
+  return condition.logicMode === "any" ? `任一满足：${content}` : content;
+}
+
+function collectUnresolvedForeshadowMessagesByScene(scenes: Scene[]) {
+  const foreshadowThreads = new Map<
+    string,
+    {
+      title: string;
+      sceneId: string;
+    }
+  >();
+  const payoffThreadIds = new Set<string>();
+
+  scenes.forEach((scene) => {
+    scene.blocks.forEach((block) => {
+      if (block.blockType !== "note") {
+        return;
+      }
+
+      const noteMeta = parseNoteBlockMeta(block.metaJson);
+      if (!noteMeta.threadId) {
+        return;
+      }
+
+      if (noteMeta.noteType === "foreshadow") {
+        foreshadowThreads.set(noteMeta.threadId, {
+          title: block.contentText.trim() || noteMeta.threadId,
+          sceneId: scene.id,
+        });
+        return;
+      }
+
+      if (noteMeta.noteType === "payoff") {
+        payoffThreadIds.add(noteMeta.threadId);
+      }
+    });
+  });
+
+  const unresolvedMessagesByScene = new Map<string, string[]>();
+
+  for (const [threadId, info] of foreshadowThreads) {
+    if (payoffThreadIds.has(threadId)) {
+      continue;
+    }
+
+    const messages = unresolvedMessagesByScene.get(info.sceneId) ?? [];
+    messages.push(`伏笔「${info.title}」尚未找到回收点`);
+    unresolvedMessagesByScene.set(info.sceneId, messages);
+  }
+
+  return unresolvedMessagesByScene;
 }
 
 function collectConditionBlocks(scene: Scene, sourceBlockId: string | null) {
@@ -249,6 +308,8 @@ export function buildSceneGraph(
 ): SceneGraphData {
   const variablesById = buildVariableMap(variables);
   const sceneById = buildSceneMap(scenes);
+  const unresolvedForeshadowMessagesByScene =
+    collectUnresolvedForeshadowMessagesByScene(scenes);
   const orderedScenes = [...scenes].sort((left, right) => {
     if (left.sortOrder === right.sortOrder) {
       return left.title.localeCompare(right.title, "zh-CN");
@@ -317,6 +378,7 @@ export function buildSceneGraph(
           variablesById,
           incomingCount,
           outgoingCount,
+          unresolvedForeshadowMessagesByScene.get(scene.id) ?? [],
         );
 
         if (issues.length === 0) {

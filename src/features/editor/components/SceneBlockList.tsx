@@ -1,10 +1,12 @@
 import { ChoiceBlockEditor } from "./ChoiceBlockEditor";
 import { ConditionBlockEditor } from "./ConditionBlockEditor";
+import { NoteBlockEditor } from "./NoteBlockEditor";
 import type { SceneBlock } from "../../../lib/domain/block";
 import type { Scene } from "../../../lib/domain/scene";
 import type { ProjectVariable } from "../../../lib/domain/variable";
 import { parseChoiceBlockMeta } from "../store/choiceBlock";
 import { parseConditionBlockMeta, type ConditionBlockMeta } from "../store/conditionBlock";
+import { parseNoteBlockMeta, type NoteBlockMeta } from "../store/noteBlock";
 
 interface SceneBlockListProps {
   sceneId: string;
@@ -33,6 +35,11 @@ interface SceneBlockListProps {
     sceneId: string,
     blockId: string,
     input: ConditionBlockMeta,
+  ) => void;
+  onUpdateNoteBlock: (
+    sceneId: string,
+    blockId: string,
+    input: NoteBlockMeta,
   ) => void;
 }
 
@@ -63,6 +70,7 @@ export function SceneBlockList({
   onUpdateBlockContent,
   onUpdateChoiceBlock,
   onUpdateConditionBlock,
+  onUpdateNoteBlock,
 }: SceneBlockListProps) {
   return (
     <div>
@@ -130,6 +138,29 @@ export function SceneBlockList({
                   onUpdateConditionBlock(sceneId, block.id, input)
                 }
               />
+            </div>
+          );
+        }
+
+        if (block.blockType === "note") {
+          const meta = parseNoteBlockMeta(block.metaJson);
+
+          return (
+            <div key={block.id}>
+              {blockControls}
+              <NoteBlockEditor
+                note={meta}
+                onChange={(input) => onUpdateNoteBlock(sceneId, block.id, input)}
+              />
+              <label>
+                注释内容
+                <textarea
+                  value={block.contentText}
+                  onChange={(event) =>
+                    onUpdateBlockContent(sceneId, block.id, event.target.value)
+                  }
+                />
+              </label>
             </div>
           );
         }

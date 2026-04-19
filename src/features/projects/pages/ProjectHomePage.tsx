@@ -6,6 +6,12 @@ import { useCharacterStore } from "../../characters/store/useCharacterStore";
 import { useEditorStore } from "../../editor/store/useEditorStore";
 import { useLoreStore } from "../../lore/store/useLoreStore";
 import { ProjectCreateForm } from "../components/ProjectCreateForm";
+import {
+  buildProjectExportPayload,
+  exportProjectAsEngineDraft,
+  exportProjectAsJson,
+  exportProjectAsPlainText,
+} from "../lib/projectExport";
 import { searchProjectContent } from "../lib/projectSearch";
 import { buildProjectStats } from "../lib/projectStats";
 import { useProjectStore } from "../store/useProjectStore";
@@ -40,6 +46,8 @@ export function ProjectHomePage() {
   const [routeName, setRouteName] = useState("");
   const [routeDrafts, setRouteDrafts] = useState<Record<string, string>>({});
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [exportContent, setExportContent] = useState("");
+  const [exportTitle, setExportTitle] = useState("未生成导出内容");
   const currentProject = useProjectStore((state) => state.currentProject);
   const hydrateLatestProject = useProjectStore(
     (state) => state.hydrateLatestProject,
@@ -98,6 +106,12 @@ export function ProjectHomePage() {
 
     return left.title.localeCompare(right.title, "zh-CN");
   });
+  const projectLinks = currentProject
+    ? links.filter((link) => link.projectId === currentProject.id)
+    : [];
+  const projectVariables = currentProject
+    ? variables.filter((variable) => variable.projectId === currentProject.id)
+    : [];
 
   const recentScene = resolveRecentScene(availableScenes, selectedSceneId);
   const startScene = resolveStartScene(availableScenes) ?? recentScene;
@@ -150,6 +164,49 @@ export function ProjectHomePage() {
     }
 
     navigate("/preview");
+  }
+
+  function buildExportPayload() {
+    if (!currentProject) {
+      return null;
+    }
+
+    return buildProjectExportPayload({
+      project: currentProject,
+      scenes: availableScenes,
+      links: projectLinks,
+      variables: projectVariables,
+    });
+  }
+
+  function handleExportJson() {
+    const payload = buildExportPayload();
+    if (!payload) {
+      return;
+    }
+
+    setExportTitle("结构化 JSON");
+    setExportContent(exportProjectAsJson(payload));
+  }
+
+  function handleExportText() {
+    const payload = buildExportPayload();
+    if (!payload) {
+      return;
+    }
+
+    setExportTitle("纯文本稿");
+    setExportContent(exportProjectAsPlainText(payload));
+  }
+
+  function handleExportScript() {
+    const payload = buildExportPayload();
+    if (!payload) {
+      return;
+    }
+
+    setExportTitle("引擎草稿脚本");
+    setExportContent(exportProjectAsEngineDraft(payload));
   }
 
   return (
@@ -258,6 +315,28 @@ export function ProjectHomePage() {
           >
             新增路线
           </button>
+          <section aria-label="导出能力">
+            <h4>导出能力</h4>
+            <div>
+              <button type="button" onClick={handleExportJson}>
+                生成结构化 JSON
+              </button>
+              <button type="button" onClick={handleExportText}>
+                生成纯文本稿
+              </button>
+              <button type="button" onClick={handleExportScript}>
+                生成引擎草稿脚本
+              </button>
+            </div>
+            <p>当前输出：{exportTitle}</p>
+            <textarea
+              aria-label="导出结果"
+              readOnly
+              value={exportContent}
+              placeholder="点击上方按钮生成导出内容"
+              style={{ width: "100%", minHeight: 180 }}
+            />
+          </section>
           <section aria-label="项目全局搜索">
             <h4>项目全局搜索</h4>
             <label>

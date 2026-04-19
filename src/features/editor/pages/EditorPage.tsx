@@ -28,6 +28,7 @@ export function EditorPage() {
   const updateConditionBlock = useEditorStore(
     (state) => state.updateConditionBlock,
   );
+  const updateNoteBlock = useEditorStore((state) => state.updateNoteBlock);
   const updateLocalScene = useEditorStore((state) => state.updateScene);
   const currentProject = useProjectStore((state) => state.currentProject);
   const createProjectSceneInRoute = useProjectStore(
@@ -336,6 +337,7 @@ export function EditorPage() {
               onUpdateBlockContent={updateBlockContent}
               onUpdateChoiceBlock={updateChoiceBlock}
               onUpdateConditionBlock={updateConditionBlock}
+              onUpdateNoteBlock={updateNoteBlock}
             />
           ) : (
             <p>请选择或创建一个场景。</p>

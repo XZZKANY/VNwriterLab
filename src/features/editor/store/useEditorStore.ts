@@ -16,9 +16,15 @@ import {
 } from "./choiceBlock";
 import {
   clearConditionBlockVariableId,
+  createDefaultConditionBlockMeta,
   stringifyConditionBlockMeta,
   type ConditionBlockMeta,
 } from "./conditionBlock";
+import {
+  createDefaultNoteBlockMeta,
+  stringifyNoteBlockMeta,
+  type NoteBlockMeta,
+} from "./noteBlock";
 import {
   normalizeEditorSceneBlocks,
   normalizeEditorScenesByRoute,
@@ -84,6 +90,11 @@ interface EditorState {
     sceneId: string,
     blockId: string,
     input: ConditionBlockMeta,
+  ) => void;
+  updateNoteBlock: (
+    sceneId: string,
+    blockId: string,
+    input: NoteBlockMeta,
   ) => void;
   resetEditor: () => void;
 }
@@ -459,6 +470,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
                       metaJson:
                         blockType === "condition"
                           ? stringifyConditionBlockMeta({
+                              ...createDefaultConditionBlockMeta(),
                               conditions: [
                                 {
                                   variableId: get().variables[0]?.id ?? null,
@@ -467,6 +479,8 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
                                 },
                               ],
                             })
+                          : blockType === "note"
+                            ? stringifyNoteBlockMeta(createDefaultNoteBlockMeta())
                           : null,
                     },
                   ],
@@ -680,6 +694,40 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         useAutoSaveStore.getState().markDirty();
 
         const nextMeta = stringifyConditionBlockMeta(input);
+
+        const nextScenes = get().scenes.map((item) =>
+            item.id === sceneId
+              ? {
+                  ...item,
+                  blocks: item.blocks.map((currentBlock) =>
+                    currentBlock.id === blockId
+                      ? {
+                          ...currentBlock,
+                          metaJson: nextMeta,
+                        }
+                      : currentBlock,
+                  ),
+                }
+              : item,
+          );
+
+        set({
+          scenes: nextScenes,
+        });
+
+        useAutoSaveStore.getState().markSaved();
+        saveSceneBlocksSnapshot(sceneId, nextScenes);
+      },
+      updateNoteBlock: (sceneId, blockId, input) => {
+        const scene = get().scenes.find((item) => item.id === sceneId);
+        const block = scene?.blocks.find((item) => item.id === blockId);
+        if (!scene || !block) {
+          return;
+        }
+
+        useAutoSaveStore.getState().markDirty();
+
+        const nextMeta = stringifyNoteBlockMeta(input);
 
         const nextScenes = get().scenes.map((item) =>
             item.id === sceneId

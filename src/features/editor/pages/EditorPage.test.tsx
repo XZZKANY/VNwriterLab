@@ -438,6 +438,44 @@ describe("EditorPage", () => {
     expect(screen.getAllByLabelText("条件变量")).toHaveLength(2);
     expect(screen.getAllByRole("button", { name: "删除此项" })).toHaveLength(2);
   });
+
+  it("条件块支持切换为满足任一条件并写入元数据", async () => {
+    const user = userEvent.setup();
+
+    useProjectStore.getState().createProject("雨夜回响", "一段校园悬疑故事");
+    render(<EditorPage />);
+
+    await user.click(screen.getByRole("button", { name: "新增变量" }));
+    await user.click(screen.getByRole("button", { name: "在此路线新建场景" }));
+    await user.click(screen.getByRole("button", { name: "新增条件" }));
+    await user.selectOptions(screen.getByLabelText("条件组合"), "any");
+
+    const conditionBlock = useEditorStore
+      .getState()
+      .scenes[0]?.blocks.find((block) => block.blockType === "condition");
+
+    expect(conditionBlock?.metaJson).toContain("\"logicMode\":\"any\"");
+  });
+
+  it("注释块支持标记伏笔并写入线索编号", async () => {
+    const user = userEvent.setup();
+
+    useProjectStore.getState().createProject("雨夜回响", "一段校园悬疑故事");
+    render(<EditorPage />);
+
+    await user.click(screen.getByRole("button", { name: "在此路线新建场景" }));
+    await user.click(screen.getByRole("button", { name: "新增注释" }));
+    await user.selectOptions(screen.getByLabelText("注释类型"), "foreshadow");
+    await user.type(screen.getByLabelText("线索编号"), "old-school-key");
+
+    const noteBlock = useEditorStore
+      .getState()
+      .scenes[0]?.blocks.find((block) => block.blockType === "note");
+
+    expect(noteBlock?.metaJson).toContain("\"noteType\":\"foreshadow\"");
+    expect(noteBlock?.metaJson).toContain("\"threadId\":\"old-school-key\"");
+  });
+
   it("允许编辑场景基础信息并同步到 project 和 editor", async () => {
     const user = userEvent.setup();
 

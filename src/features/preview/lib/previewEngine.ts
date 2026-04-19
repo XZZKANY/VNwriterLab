@@ -14,7 +14,7 @@ function evaluateConditionBlock(
     return false;
   }
 
-  return condition.conditions.every((item) => {
+  const evaluateItem = (item: (typeof condition.conditions)[number]) => {
     const variable = variables.find((candidate) => candidate.id === item.variableId);
     if (!variable) {
       return false;
@@ -25,7 +25,13 @@ function evaluateConditionBlock(
     }
 
     return variable.defaultValue > 0;
-  });
+  };
+
+  if (condition.logicMode === "any") {
+    return condition.conditions.some(evaluateItem);
+  }
+
+  return condition.conditions.every(evaluateItem);
 }
 
 export function canEnterScene(

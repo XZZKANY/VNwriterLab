@@ -741,4 +741,134 @@ describe("buildSceneGraph", () => {
       }),
     ]);
   });
+
+  it("会把未回收伏笔标记为问题并在摘要中展示任一条件", () => {
+    const graph = buildSceneGraph(
+      [
+        {
+          id: "s1",
+          projectId: "p1",
+          routeId: "r1",
+          title: "埋线场景",
+          summary: "",
+          sceneType: "normal",
+          status: "draft",
+          chapterLabel: "",
+          sortOrder: 0,
+          isStartScene: true,
+          isEndingScene: false,
+          notes: "",
+          blocks: [
+            {
+              id: "c1",
+              sceneId: "s1",
+              blockType: "condition",
+              sortOrder: 0,
+              characterId: null,
+              contentText: "",
+              metaJson: JSON.stringify({
+                logicMode: "any",
+                conditions: [
+                  {
+                    variableId: "v1",
+                    operator: "isTrue",
+                    compareValue: 1,
+                  },
+                  {
+                    variableId: "v2",
+                    operator: "gte",
+                    compareValue: 2,
+                  },
+                ],
+              }),
+            },
+            {
+              id: "b1",
+              sceneId: "s1",
+              blockType: "choice",
+              sortOrder: 1,
+              characterId: null,
+              contentText: "",
+              metaJson: JSON.stringify({
+                label: "继续",
+                targetSceneId: "s2",
+              }),
+            },
+            {
+              id: "n1",
+              sceneId: "s1",
+              blockType: "note",
+              sortOrder: 2,
+              characterId: null,
+              contentText: "钥匙伏笔",
+              metaJson: JSON.stringify({
+                noteType: "foreshadow",
+                threadId: "old-school-key",
+              }),
+            },
+          ],
+        },
+        {
+          id: "s2",
+          projectId: "p1",
+          routeId: "r1",
+          title: "后续场景",
+          summary: "",
+          sceneType: "branch",
+          status: "draft",
+          chapterLabel: "",
+          sortOrder: 1,
+          isStartScene: false,
+          isEndingScene: false,
+          notes: "",
+          blocks: [],
+        },
+      ],
+      [
+        {
+          id: "l1",
+          projectId: "p1",
+          fromSceneId: "s1",
+          toSceneId: "s2",
+          linkType: "choice",
+          sourceBlockId: "b1",
+          label: "继续",
+          conditionId: null,
+          priorityOrder: 0,
+        },
+      ],
+      [
+        {
+          id: "v1",
+          projectId: "p1",
+          name: "钥匙",
+          variableType: "flag",
+          defaultValue: 1,
+        },
+        {
+          id: "v2",
+          projectId: "p1",
+          name: "勇气",
+          variableType: "number",
+          defaultValue: 0,
+        },
+      ],
+    );
+
+    expect(graph.conditionSummaries).toEqual([
+      expect.objectContaining({
+        sceneId: "s1",
+        summary: "任一满足：钥匙 为真；勇气 ≥ 2",
+      }),
+    ]);
+    expect(graph.issueSummaries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          sceneId: "s1",
+          categories: expect.arrayContaining(["伏笔未回收"]),
+          issues: expect.arrayContaining(["伏笔「钥匙伏笔」尚未找到回收点"]),
+        }),
+      ]),
+    );
+  });
 });

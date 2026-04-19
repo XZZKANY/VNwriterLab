@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useEditorStore } from "../../editor/store/useEditorStore";
 import { useProjectStore } from "../../projects/store/useProjectStore";
@@ -13,13 +13,17 @@ export function GraphPage() {
   const variables = useEditorStore((state) => state.variables);
   const selectScene = useEditorStore((state) => state.selectScene);
   const currentProject = useProjectStore((state) => state.currentProject);
-  const routes = [...(currentProject?.routes ?? [])].sort((left, right) => {
-    if (left.sortOrder === right.sortOrder) {
-      return left.id.localeCompare(right.id);
-    }
+  const routes = useMemo(
+    () =>
+      [...(currentProject?.routes ?? [])].sort((left, right) => {
+        if (left.sortOrder === right.sortOrder) {
+          return left.id.localeCompare(right.id);
+        }
 
-    return left.sortOrder - right.sortOrder;
-  });
+        return left.sortOrder - right.sortOrder;
+      }),
+    [currentProject?.routes],
+  );
   const [routeFilter, setRouteFilter] = useState<"all" | "single">("all");
   const [selectedRouteId, setSelectedRouteId] = useState("");
   const [questionOnly, setQuestionOnly] = useState(false);
@@ -27,11 +31,19 @@ export function GraphPage() {
     routes.some((route) => route.id === selectedRouteId)
       ? selectedRouteId
       : routes[0]?.id ?? "";
-  const graph = applySceneGraphFilters(buildSceneGraph(scenes, links, variables), {
-    routeFilter,
-    routeId: activeRouteId || null,
-    questionOnly,
-  });
+  const rawGraph = useMemo(
+    () => buildSceneGraph(scenes, links, variables),
+    [scenes, links, variables],
+  );
+  const graph = useMemo(
+    () =>
+      applySceneGraphFilters(rawGraph, {
+        routeFilter,
+        routeId: activeRouteId || null,
+        questionOnly,
+      }),
+    [rawGraph, routeFilter, activeRouteId, questionOnly],
+  );
 
   function handleOpenScene(sceneId: string) {
     selectScene(sceneId);

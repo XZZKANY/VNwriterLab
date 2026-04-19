@@ -215,4 +215,52 @@ describe("ProjectHomePage", () => {
       "角色线 2 开场",
     ]);
   });
+
+  it("支持生成三种导出内容", async () => {
+    const user = userEvent.setup();
+    const scene = createScene({
+      id: "scene-1",
+      title: "序章",
+      summary: "雨夜开场",
+      blocks: [
+        {
+          id: "block-1",
+          sceneId: "scene-1",
+          blockType: "narration",
+          sortOrder: 0,
+          characterId: null,
+          contentText: "雨夜里传来脚步声。",
+          metaJson: null,
+        },
+      ],
+    });
+
+    useProjectStore.setState({
+      currentProject: createProject([scene]),
+    });
+    useEditorStore.setState({
+      scenes: [scene],
+      selectedSceneId: scene.id,
+      links: [],
+      variables: [],
+      selectedVariableId: null,
+    });
+
+    render(<ProjectHomePage />);
+
+    await user.click(screen.getByRole("button", { name: "生成结构化 JSON" }));
+    expect(
+      (screen.getByLabelText("导出结果") as HTMLTextAreaElement).value,
+    ).toContain("\"name\": \"雨夜回响\"");
+
+    await user.click(screen.getByRole("button", { name: "生成纯文本稿" }));
+    expect(
+      (screen.getByLabelText("导出结果") as HTMLTextAreaElement).value,
+    ).toContain("## 路线：主线");
+
+    await user.click(screen.getByRole("button", { name: "生成引擎草稿脚本" }));
+    expect(
+      (screen.getByLabelText("导出结果") as HTMLTextAreaElement).value,
+    ).toContain("label scene-1:");
+  });
 });

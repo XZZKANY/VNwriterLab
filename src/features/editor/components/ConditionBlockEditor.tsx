@@ -54,6 +54,22 @@ export function ConditionBlockEditor({
   return (
     <fieldset>
       <legend>条件列表</legend>
+      <label>
+        条件组合
+        <select
+          aria-label="条件组合"
+          value={condition.logicMode ?? "all"}
+          onChange={(event) =>
+            onChange({
+              ...condition,
+              logicMode: event.target.value === "any" ? "any" : "all",
+            })
+          }
+        >
+          <option value="all">满足全部条件</option>
+          <option value="any">满足任一条件</option>
+        </select>
+      </label>
       {condition.conditions.length > 0 ? (
         condition.conditions.map((item, index) => (
           <fieldset key={index}>
