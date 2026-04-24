@@ -1,4 +1,3 @@
-import { createEmptyProject } from "../../../../lib/domain/project";
 import type {
   ProjectLifecycleSlice,
   ProjectSliceCreator,
@@ -6,12 +5,13 @@ import type {
 
 export const createProjectLifecycleSlice: ProjectSliceCreator<
   ProjectLifecycleSlice
-> = (set) => ({
+> = (_set, _get) => ({
   createProject(name, summary, template) {
-    const nextProject = createEmptyProject(name, summary, template);
-    set({ currentProject: nextProject });
+    void name;
+    void summary;
+    void template;
   },
   resetProject() {
-    set({ currentProject: null });
+    return;
   },
 });
