@@ -23,17 +23,14 @@ export type EditorVariableUpdateInput = Partial<
 >;
 
 export interface EditorHydrationSlice {
-  scenes: Scene[];
-  selectedSceneId: string | null;
-  links: SceneLink[];
-  variables: ProjectVariable[];
-  selectedVariableId: string | null;
   hydrateScenes: (projectId: string) => Promise<void>;
   hydrateVariables: (projectId: string) => Promise<void>;
   resetEditor: () => void;
 }
 
 export interface EditorSceneSlice {
+  scenes: Scene[];
+  selectedSceneId: string | null;
   createScene: (input?: { projectId?: string; routeId?: string }) => void;
   importScene: (scene: Scene) => void;
   selectScene: (sceneId: string) => void;
@@ -42,6 +39,8 @@ export interface EditorSceneSlice {
 }
 
 export interface EditorVariableSlice {
+  variables: ProjectVariable[];
+  selectedVariableId: string | null;
   createVariable: (projectId: string) => ProjectVariable | null;
   selectVariable: (variableId: string) => void;
   deleteVariable: (variableId: string) => void;
@@ -70,6 +69,7 @@ export interface EditorBlockSlice {
 }
 
 export interface EditorChoiceLinkSlice {
+  links: SceneLink[];
   updateChoiceBlock: (
     sceneId: string,
     blockId: string,
