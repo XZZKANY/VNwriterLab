@@ -1,37 +1,18 @@
-import { createEmptyVariable } from "../../../../lib/domain/variable";
-import { getReferenceRepository } from "../../../../lib/repositories/referenceRepositoryRuntime";
-import { useAutoSaveStore } from "../../../../lib/store/useAutoSaveStore";
+import { createEmptyVariable } from "@/lib/domain/variable";
+import { useAutoSaveStore } from "@/lib/store/useAutoSaveStore";
 import { clearChoiceBlockEffectVariableId } from "../choiceBlock";
 import { clearConditionBlockVariableId } from "../conditionBlock";
 import type {
   EditorSliceCreator,
   EditorVariableSlice,
-  EditorStoreState,
 } from "../editorStore.types";
-
-const initialVariableState: Pick<
-  EditorVariableSlice,
-  "variables" | "selectedVariableId"
-> = {
-  variables: [],
-  selectedVariableId: null,
-};
-
-function saveProjectVariablesSnapshot(
-  projectId: string,
-  variables: EditorStoreState["variables"],
-) {
-  const projectVariables = variables.filter(
-    (variable) => variable.projectId === projectId,
-  );
-
-  void getReferenceRepository().saveVariables(projectId, projectVariables);
-}
+import { saveProjectVariablesSnapshot } from "./repositorySnapshots";
 
 export const createEditorVariableSlice: EditorSliceCreator<
   EditorVariableSlice
 > = (set, get) => ({
-  ...initialVariableState,
+  variables: [],
+  selectedVariableId: null,
   createVariable(projectId) {
     const trimmedProjectId = projectId.trim();
     if (!trimmedProjectId) {
@@ -78,7 +59,7 @@ export const createEditorVariableSlice: EditorSliceCreator<
     );
     const nextSelectedVariableId =
       get().selectedVariableId === variableId
-        ? projectVariables[deletedIndex + 1]?.id ?? null
+        ? (projectVariables[deletedIndex + 1]?.id ?? null)
         : get().selectedVariableId;
 
     const nextVariables = get().variables.filter(

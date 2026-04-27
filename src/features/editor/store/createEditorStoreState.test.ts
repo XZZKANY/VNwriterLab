@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createEditorStoreState } from "./createEditorStoreState";
+import type { EditorStoreState } from "./editorStore.types";
 
-type EditorStoreBaseState = ReturnType<typeof createEditorStoreState>;
 type EditorStoreSet = Parameters<typeof createEditorStoreState>[0];
 type EditorStoreGet = Parameters<typeof createEditorStoreState>[1];
 type EditorStoreApi = Parameters<typeof createEditorStoreState>[2];
@@ -19,19 +19,27 @@ const functionKeys = [
   "selectVariable",
   "deleteVariable",
   "updateVariable",
+  "addBlock",
+  "deleteBlock",
+  "moveBlockUp",
+  "moveBlockDown",
+  "updateBlockContent",
+  "updateConditionBlock",
+  "updateNoteBlock",
+  "updateChoiceBlock",
 ] as const;
 
 function composeEditorStoreState() {
-  let state = {} as EditorStoreBaseState;
+  let state = {} as EditorStoreState;
 
   const setState: EditorStoreSet = (partial, replace) => {
     const partialState =
       typeof partial === "function"
-        ? partial(state as never)
-        : (partial as Partial<EditorStoreBaseState>);
+        ? partial(state)
+        : (partial as Partial<EditorStoreState>);
 
     if (replace) {
-      state = partialState as EditorStoreBaseState;
+      state = partialState as EditorStoreState;
       return;
     }
 
@@ -40,7 +48,7 @@ function composeEditorStoreState() {
       ...partialState,
     };
   };
-  const getState: EditorStoreGet = () => state as never;
+  const getState: EditorStoreGet = () => state;
   const store = {} as EditorStoreApi;
 
   state = createEditorStoreState(setState, getState, store);
@@ -49,14 +57,14 @@ function composeEditorStoreState() {
 }
 
 describe("createEditorStoreState", () => {
-  it("只组合 hydration / scene / variable 三个基础 slice", () => {
+  it("组合 5 个 editor slice 后包含约定的状态和动作键", () => {
     const composedState = composeEditorStoreState();
 
     expect(composedState.scenes).toEqual([]);
     expect(composedState.selectedSceneId).toBeNull();
     expect(composedState.variables).toEqual([]);
     expect(composedState.selectedVariableId).toBeNull();
-    expect(composedState).not.toHaveProperty("links");
+    expect(composedState.links).toEqual([]);
 
     for (const key of functionKeys) {
       expect(composedState).toHaveProperty(key);

@@ -1,7 +1,7 @@
-import type { SceneBlock } from "../../../lib/domain/block";
-import type { SceneLink } from "../../../lib/domain/link";
-import type { Scene } from "../../../lib/domain/scene";
-import type { ProjectVariable } from "../../../lib/domain/variable";
+import type { SceneBlock } from "@/lib/domain/block";
+import type { SceneLink } from "@/lib/domain/link";
+import type { Scene } from "@/lib/domain/scene";
+import type { ProjectVariable } from "@/lib/domain/variable";
 import type { StateCreator } from "zustand";
 import type { ConditionBlockMeta } from "./conditionBlock";
 import type { NoteBlockMeta } from "./noteBlock";
@@ -65,7 +65,11 @@ export interface EditorBlockSlice {
     blockId: string,
     input: ConditionBlockMeta,
   ) => void;
-  updateNoteBlock: (sceneId: string, blockId: string, input: NoteBlockMeta) => void;
+  updateNoteBlock: (
+    sceneId: string,
+    blockId: string,
+    input: NoteBlockMeta,
+  ) => void;
 }
 
 export interface EditorChoiceLinkSlice {

@@ -1,6 +1,6 @@
-import { getReferenceRepository } from "../../../../lib/repositories/referenceRepositoryRuntime";
-import { getStoryRepository } from "../../../../lib/repositories/storyRepositoryRuntime";
-import { useAutoSaveStore } from "../../../../lib/store/useAutoSaveStore";
+import { getReferenceRepository } from "@/lib/repositories/referenceRepositoryRuntime";
+import { getStoryRepository } from "@/lib/repositories/storyRepositoryRuntime";
+import { useAutoSaveStore } from "@/lib/store/useAutoSaveStore";
 import type {
   EditorHydrationSlice,
   EditorSliceCreator,
@@ -44,7 +44,7 @@ export const createEditorHydrationSlice: EditorSliceCreator<
       currentSelectedSceneId &&
       projectScenes.some((scene) => scene.id === currentSelectedSceneId)
         ? currentSelectedSceneId
-        : projectScenes[0]?.id ?? null;
+        : (projectScenes[0]?.id ?? null);
 
     set({
       scenes: [...otherScenes, ...projectScenes],
@@ -73,7 +73,7 @@ export const createEditorHydrationSlice: EditorSliceCreator<
         (variable) => variable.id === currentSelectedVariableId,
       )
         ? currentSelectedVariableId
-        : projectVariables[0]?.id ?? null;
+        : (projectVariables[0]?.id ?? null);
 
     set({
       variables: [...otherVariables, ...projectVariables],

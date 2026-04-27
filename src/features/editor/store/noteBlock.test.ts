@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  parseNoteBlockMeta,
-  stringifyNoteBlockMeta,
-} from "./noteBlock";
+import { parseNoteBlockMeta, stringifyNoteBlockMeta } from "./noteBlock";
 
 describe("noteBlock", () => {
   it("解析异常值时返回默认普通注释", () => {

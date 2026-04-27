@@ -26,7 +26,8 @@ export function parseChoiceBlockMeta(metaJson: string | null): ChoiceBlockMeta {
         typeof parsed.effectVariableId === "string"
           ? parsed.effectVariableId
           : null,
-      effectValue: typeof parsed.effectValue === "number" ? parsed.effectValue : 0,
+      effectValue:
+        typeof parsed.effectValue === "number" ? parsed.effectValue : 0,
     };
   } catch {
     return {

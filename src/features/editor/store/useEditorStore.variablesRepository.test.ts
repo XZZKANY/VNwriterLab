@@ -1,13 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ProjectVariable } from "../../../lib/domain/variable";
-import { useAutoSaveStore } from "../../../lib/store/useAutoSaveStore";
+import type { ProjectVariable } from "@/lib/domain/variable";
+import { useAutoSaveStore } from "@/lib/store/useAutoSaveStore";
 import {
   resetReferenceRepositoryForTesting,
   setReferenceRepositoryForTesting,
-} from "../../../lib/repositories/referenceRepositoryRuntime";
+} from "@/lib/repositories/referenceRepositoryRuntime";
 import { useEditorStore } from "./useEditorStore";
 
-function createVariable(overrides: Partial<ProjectVariable> = {}): ProjectVariable {
+function createVariable(
+  overrides: Partial<ProjectVariable> = {},
+): ProjectVariable {
   return {
     id: "v1",
     projectId: "p1",
@@ -18,12 +20,16 @@ function createVariable(overrides: Partial<ProjectVariable> = {}): ProjectVariab
   };
 }
 
-function createFakeReferenceRepository(initialVariables: ProjectVariable[] = []) {
+function createFakeReferenceRepository(
+  initialVariables: ProjectVariable[] = [],
+) {
   const variables = new Map(
     initialVariables.map((variable) => [variable.id, variable]),
   );
   const listVariables = vi.fn(async (projectId: string) =>
-    [...variables.values()].filter((variable) => variable.projectId === projectId),
+    [...variables.values()].filter(
+      (variable) => variable.projectId === projectId,
+    ),
   );
   const saveVariables = vi.fn(
     async (projectId: string, nextVariables: ProjectVariable[]) => {

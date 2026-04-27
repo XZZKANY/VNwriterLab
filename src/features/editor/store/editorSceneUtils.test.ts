@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { SceneBlock } from "../../../lib/domain/block";
-import type { Scene } from "../../../lib/domain/scene";
+import type { SceneBlock } from "@/lib/domain/block";
+import type { Scene } from "@/lib/domain/scene";
 import {
   normalizeEditorSceneBlocks,
   normalizeEditorScenesByRoute,
@@ -50,7 +50,9 @@ describe("editorSceneUtils", () => {
       createBlock("block-1", 9),
     ]);
 
-    expect(result.map((block) => ({ id: block.id, sortOrder: block.sortOrder }))).toEqual([
+    expect(
+      result.map((block) => ({ id: block.id, sortOrder: block.sortOrder })),
+    ).toEqual([
       { id: "block-2", sortOrder: 0 },
       { id: "block-1", sortOrder: 1 },
     ]);
@@ -87,9 +89,19 @@ describe("editorSceneUtils", () => {
       })),
     ).toEqual([
       { id: "scene-a-1", routeId: "route-a", sortOrder: 0, isStartScene: true },
-      { id: "scene-a-2", routeId: "route-a", sortOrder: 1, isStartScene: false },
+      {
+        id: "scene-a-2",
+        routeId: "route-a",
+        sortOrder: 1,
+        isStartScene: false,
+      },
       { id: "scene-b-1", routeId: "route-b", sortOrder: 0, isStartScene: true },
-      { id: "scene-b-2", routeId: "route-b", sortOrder: 1, isStartScene: false },
+      {
+        id: "scene-b-2",
+        routeId: "route-b",
+        sortOrder: 1,
+        isStartScene: false,
+      },
     ]);
   });
 });

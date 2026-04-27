@@ -1,4 +1,4 @@
-import type { ConditionOperator } from "../../../lib/domain/variable";
+import type { ConditionOperator } from "@/lib/domain/variable";
 
 export interface ConditionBlockItem {
   variableId: string | null;
@@ -64,7 +64,9 @@ export function parseConditionBlockMeta(
 
     return {
       logicMode: normalizeLogicMode(parsed.logicMode),
-      conditions: [normalizeConditionItem(parsed as Partial<ConditionBlockItem>)],
+      conditions: [
+        normalizeConditionItem(parsed as Partial<ConditionBlockItem>),
+      ],
     };
   } catch {
     return createDefaultConditionBlockMeta();

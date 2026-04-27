@@ -3,85 +3,57 @@ import {
   normalizeEditorScenesByRoute,
   sortEditorScenesByRouteAndOrder,
 } from "../editorSceneUtils";
-import { getStoryRepository } from "../../../../lib/repositories/storyRepositoryRuntime";
-import { useAutoSaveStore } from "../../../../lib/store/useAutoSaveStore";
+import { withAutosave } from "@/lib/store/autosave";
+import { useAutoSaveStore } from "@/lib/store/useAutoSaveStore";
 import type {
   EditorSceneSlice,
   EditorSliceCreator,
-  EditorStoreState,
 } from "../editorStore.types";
-
-const initialSceneState: Pick<EditorSceneSlice, "scenes" | "selectedSceneId"> = {
-  scenes: [],
-  selectedSceneId: null,
-};
-
-function saveSceneSnapshot(
-  sceneId: string,
-  scenes: EditorStoreState["scenes"],
-) {
-  const scene = scenes.find((item) => item.id === sceneId);
-  if (!scene) {
-    return;
-  }
-
-  void getStoryRepository().updateScene(scene);
-}
-
-function saveProjectLinksSnapshot(
-  projectId: string,
-  links: EditorStoreState["links"],
-) {
-  const projectLinks = links.filter((link) => link.projectId === projectId);
-
-  void getStoryRepository().saveLinks(projectId, projectLinks);
-}
+import {
+  saveProjectLinksSnapshot,
+  saveSceneSnapshot,
+} from "./repositorySnapshots";
 
 export const createEditorSceneSlice: EditorSliceCreator<EditorSceneSlice> = (
   set,
   get,
 ) => ({
-  ...initialSceneState,
-  createScene(input) {
-    useAutoSaveStore.getState().markDirty();
+  scenes: [],
+  selectedSceneId: null,
+  createScene: withAutosave(
+    (input?: { projectId?: string; routeId?: string }) => {
+      const nextIndex = get().scenes.length + 1;
+      const sceneId = crypto.randomUUID();
 
-    const nextIndex = get().scenes.length + 1;
-    const sceneId = crypto.randomUUID();
-
-    set({
-      scenes: [
-        ...get().scenes,
-        {
-          id: sceneId,
-          projectId: input?.projectId ?? "local-project",
-          routeId: input?.routeId ?? "default-route",
-          title: `未命名场景 ${nextIndex}`,
-          summary: "",
-          sceneType: "normal",
-          status: "draft",
-          chapterLabel: "",
-          sortOrder: nextIndex - 1,
-          isStartScene: nextIndex === 1,
-          isEndingScene: false,
-          notes: "",
-          blocks: [],
-        },
-      ],
-      selectedSceneId: sceneId,
-    });
-
-    useAutoSaveStore.getState().markSaved();
-  },
-  importScene(scene) {
-    useAutoSaveStore.getState().markDirty();
-
+      set({
+        scenes: [
+          ...get().scenes,
+          {
+            id: sceneId,
+            projectId: input?.projectId ?? "local-project",
+            routeId: input?.routeId ?? "default-route",
+            title: `未命名场景 ${nextIndex}`,
+            summary: "",
+            sceneType: "normal",
+            status: "draft",
+            chapterLabel: "",
+            sortOrder: nextIndex - 1,
+            isStartScene: nextIndex === 1,
+            isEndingScene: false,
+            notes: "",
+            blocks: [],
+          },
+        ],
+        selectedSceneId: sceneId,
+      });
+    },
+  ),
+  importScene: withAutosave((scene) => {
     set({
       scenes: [...get().scenes, scene],
       selectedSceneId: scene.id,
     });
-
-    useAutoSaveStore.getState().markSaved();
-  },
+  }),
   selectScene(sceneId) {
     set({ selectedSceneId: sceneId });
   },
@@ -113,34 +85,40 @@ export const createEditorSceneSlice: EditorSliceCreator<EditorSceneSlice> = (
     useAutoSaveStore.getState().markDirty();
 
     const orderedScenes = sortEditorScenesByRouteAndOrder(get().scenes);
-    const deletedIndex = orderedScenes.findIndex((scene) => scene.id === sceneId);
-    const remainingScenes = orderedScenes.filter((scene) => scene.id !== sceneId);
+    const deletedIndex = orderedScenes.findIndex(
+      (scene) => scene.id === sceneId,
+    );
+    const remainingScenes = orderedScenes.filter(
+      (scene) => scene.id !== sceneId,
+    );
     const nextSelectedSceneId =
       get().selectedSceneId === sceneId
-        ? remainingScenes[deletedIndex]?.id ??
+        ? (remainingScenes[deletedIndex]?.id ??
           remainingScenes[remainingScenes.length - 1]?.id ??
-          null
+          null)
         : get().selectedSceneId;
 
-    const nextScenes = normalizeEditorScenesByRoute(remainingScenes).map((scene) => ({
-      ...scene,
-      blocks: scene.blocks.map((block) => {
-        if (block.blockType === "choice") {
-          const nextMetaJson = clearChoiceBlockTargetSceneId(
-            block.metaJson,
-            sceneId,
-          );
-          if (nextMetaJson !== block.metaJson) {
-            return {
-              ...block,
-              metaJson: nextMetaJson,
-            };
+    const nextScenes = normalizeEditorScenesByRoute(remainingScenes).map(
+      (scene) => ({
+        ...scene,
+        blocks: scene.blocks.map((block) => {
+          if (block.blockType === "choice") {
+            const nextMetaJson = clearChoiceBlockTargetSceneId(
+              block.metaJson,
+              sceneId,
+            );
+            if (nextMetaJson !== block.metaJson) {
+              return {
+                ...block,
+                metaJson: nextMetaJson,
+              };
+            }
           }
-        }
 
-        return block;
+          return block;
+        }),
       }),
-    }));
+    );
     const nextLinks = get().links.filter(
       (link) => link.fromSceneId !== sceneId && link.toSceneId !== sceneId,
     );

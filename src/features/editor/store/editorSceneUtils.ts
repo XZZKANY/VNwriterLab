@@ -1,5 +1,5 @@
-import type { SceneBlock } from "../../../lib/domain/block";
-import type { Scene } from "../../../lib/domain/scene";
+import type { SceneBlock } from "@/lib/domain/block";
+import type { Scene } from "@/lib/domain/scene";
 
 export function normalizeEditorSceneBlocks(blocks: SceneBlock[]) {
   return blocks.map((block, index) => ({

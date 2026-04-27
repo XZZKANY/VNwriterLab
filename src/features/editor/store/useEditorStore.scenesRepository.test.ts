@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SceneBlock } from "../../../lib/domain/block";
-import type { SceneLink } from "../../../lib/domain/link";
-import type { Scene } from "../../../lib/domain/scene";
+import type { SceneBlock } from "@/lib/domain/block";
+import type { SceneLink } from "@/lib/domain/link";
+import type { Scene } from "@/lib/domain/scene";
 import {
   resetStoryRepositoryForTesting,
   setStoryRepositoryForTesting,
-} from "../../../lib/repositories/storyRepositoryRuntime";
-import { useAutoSaveStore } from "../../../lib/store/useAutoSaveStore";
+} from "@/lib/repositories/storyRepositoryRuntime";
+import { useAutoSaveStore } from "@/lib/store/useAutoSaveStore";
 import { useEditorStore } from "./useEditorStore";
 
 function createScene(overrides: Partial<Scene> = {}): Scene {
@@ -56,7 +56,10 @@ function createLink(overrides: Partial<SceneLink> = {}): SceneLink {
   };
 }
 
-function createFakeStoryRepository(initialScenes: Scene[] = [], initialLinks: SceneLink[] = []) {
+function createFakeStoryRepository(
+  initialScenes: Scene[] = [],
+  initialLinks: SceneLink[] = [],
+) {
   const scenes = new Map(initialScenes.map((scene) => [scene.id, scene]));
   const links = new Map(initialLinks.map((link) => [link.id, link]));
   const listScenes = vi.fn(async (projectId: string) =>
@@ -160,12 +163,11 @@ describe("useEditorStore scenes repository", () => {
     useEditorStore.setState({ scenes: [scene], selectedSceneId: scene.id });
 
     useEditorStore.getState().addBlock("narration");
-    const firstBlockId = useEditorStore.getState().scenes[0]?.blocks[0]?.id ?? "";
-    useEditorStore.getState().updateBlockContent(
-      scene.id,
-      firstBlockId,
-      "雨夜里传来脚步声。",
-    );
+    const firstBlockId =
+      useEditorStore.getState().scenes[0]?.blocks[0]?.id ?? "";
+    useEditorStore
+      .getState()
+      .updateBlockContent(scene.id, firstBlockId, "雨夜里传来脚步声。");
     useEditorStore.getState().addBlock("note");
     useEditorStore.getState().moveBlockDown(scene.id, firstBlockId);
     useEditorStore.getState().deleteBlock(scene.id, firstBlockId);
@@ -189,7 +191,8 @@ describe("useEditorStore scenes repository", () => {
     useEditorStore.setState({ scenes: [scene], selectedSceneId: scene.id });
 
     useEditorStore.getState().addBlock("choice");
-    const choiceBlockId = useEditorStore.getState().scenes[0]?.blocks[0]?.id ?? "";
+    const choiceBlockId =
+      useEditorStore.getState().scenes[0]?.blocks[0]?.id ?? "";
     useEditorStore.getState().updateChoiceBlock(scene.id, choiceBlockId, {
       label: "拿起钥匙",
       targetSceneId: null,
@@ -212,19 +215,28 @@ describe("useEditorStore scenes repository", () => {
     expect(fake.saveBlocks).toHaveBeenLastCalledWith(
       scene.id,
       expect.arrayContaining([
-        expect.objectContaining({ metaJson: expect.stringContaining("conditions") }),
+        expect.objectContaining({
+          metaJson: expect.stringContaining("conditions"),
+        }),
       ]),
     );
   });
 
   it("updateChoiceBlock 和 deleteBlock 会保存当前项目 links 快照", () => {
-    const targetScene = createScene({ id: "scene-2", sortOrder: 1, isStartScene: false });
+    const targetScene = createScene({
+      id: "scene-2",
+      sortOrder: 1,
+      isStartScene: false,
+    });
     const scene = createScene({
       blocks: [createBlock({ id: "choice-block", blockType: "choice" })],
     });
     const fake = createFakeStoryRepository([scene, targetScene]);
     setStoryRepositoryForTesting(fake.repository);
-    useEditorStore.setState({ scenes: [scene, targetScene], selectedSceneId: scene.id });
+    useEditorStore.setState({
+      scenes: [scene, targetScene],
+      selectedSceneId: scene.id,
+    });
 
     useEditorStore.getState().updateChoiceBlock(scene.id, "choice-block", {
       label: "去旧校舍",

@@ -1,4 +1,4 @@
-import type { SceneLink } from "../../../lib/domain/link";
+import type { SceneLink } from "@/lib/domain/link";
 
 export type { SceneLink };
 
