@@ -4,7 +4,9 @@ import { createProjectLifecycleSlice } from "./slices/projectLifecycleSlice";
 import { createProjectRouteSlice } from "./slices/projectRouteSlice";
 import { createProjectSceneSlice } from "./slices/projectSceneSlice";
 
-type CreateProjectStoreStateArgs = Parameters<typeof createProjectHydrationSlice>;
+type CreateProjectStoreStateArgs = Parameters<
+  typeof createProjectHydrationSlice
+>;
 
 export const createProjectStoreState = (
   ...args: CreateProjectStoreStateArgs

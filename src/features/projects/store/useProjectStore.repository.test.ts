@@ -4,18 +4,18 @@ import {
   createSceneInRoute as createProjectSceneInRoute,
   type Project,
   type ProjectTemplate,
-} from "../../../lib/domain/project";
-import { useAutoSaveStore } from "../../../lib/store/useAutoSaveStore";
+} from "@/lib/domain/project";
+import { useAutoSaveStore } from "@/lib/store/useAutoSaveStore";
 import {
   resetProjectRepositoryForTesting,
   setProjectRepositoryForTesting,
-} from "../../../lib/repositories/projectRepositoryRuntime";
+} from "@/lib/repositories/projectRepositoryRuntime";
 import {
   resetStoryRepositoryForTesting,
   setStoryRepositoryForTesting,
-} from "../../../lib/repositories/storyRepositoryRuntime";
-import type { StoryRepository } from "../../../lib/repositories/storyRepository";
-import { useEditorStore } from "../../editor/store/useEditorStore";
+} from "@/lib/repositories/storyRepositoryRuntime";
+import type { StoryRepository } from "@/lib/repositories/storyRepository";
+import { useEditorStore } from "@/features/editor/store/useEditorStore";
 import { useProjectStore } from "./useProjectStore";
 
 function createStoredProject(): Project {
@@ -40,9 +40,13 @@ function createStoredProject(): Project {
 }
 
 function createFakeProjectRepository(initialProjects: Project[] = []) {
-  const projects = new Map(initialProjects.map((project) => [project.id, project]));
+  const projects = new Map(
+    initialProjects.map((project) => [project.id, project]),
+  );
   const listProjects = vi.fn(async () => [...projects.values()]);
-  const getProject = vi.fn(async (projectId: string) => projects.get(projectId) ?? null);
+  const getProject = vi.fn(
+    async (projectId: string) => projects.get(projectId) ?? null,
+  );
   const createProject = vi.fn(
     async (input: {
       name: string;
@@ -84,7 +88,9 @@ function createFakeStoryRepository() {
   const deleteScene = vi.fn(async () => undefined);
   const repository: StoryRepository = {
     listScenes: vi.fn(async () => []),
-    createScene: vi.fn(async (input) => input.scene ?? createStoredProject().scenes[0]!),
+    createScene: vi.fn(
+      async (input) => input.scene ?? createStoredProject().scenes[0]!,
+    ),
     updateScene,
     deleteScene,
     saveBlocks: vi.fn(async () => undefined),
@@ -160,7 +166,8 @@ describe("useProjectStore repository", () => {
     setStoryRepositoryForTesting(fakeStory.repository);
 
     useProjectStore.getState().createProject("雨夜回响", "一段校园悬疑故事");
-    const routeId = useProjectStore.getState().currentProject?.routes[0]?.id ?? "";
+    const routeId =
+      useProjectStore.getState().currentProject?.routes[0]?.id ?? "";
 
     useProjectStore.getState().createRoute("林夏线");
     const secondRouteId =
@@ -195,7 +202,8 @@ describe("useProjectStore repository", () => {
     setStoryRepositoryForTesting(fakeStory.repository);
 
     useProjectStore.getState().createProject("雨夜回响", "一段校园悬疑故事");
-    const routeId = useProjectStore.getState().currentProject?.routes[0]?.id ?? "";
+    const routeId =
+      useProjectStore.getState().currentProject?.routes[0]?.id ?? "";
     const firstScene = useProjectStore.getState().createSceneInRoute(routeId)!;
     const secondScene = useProjectStore.getState().createSceneInRoute(routeId)!;
 

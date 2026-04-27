@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { Route } from "../../../lib/domain/project";
-import type { Scene } from "../../../lib/domain/scene";
+import type { Route } from "@/lib/domain/project";
+import type { Scene } from "@/lib/domain/scene";
 import {
   moveProjectSceneToRoute,
   normalizeProjectScenesByRoute,
@@ -76,7 +76,12 @@ describe("projectSceneUtils", () => {
       })),
     ).toEqual([
       { id: "scene-a-1", routeId: "route-a", sortOrder: 0, isStartScene: true },
-      { id: "scene-a-2", routeId: "route-a", sortOrder: 1, isStartScene: false },
+      {
+        id: "scene-a-2",
+        routeId: "route-a",
+        sortOrder: 1,
+        isStartScene: false,
+      },
       { id: "scene-b-1", routeId: "route-b", sortOrder: 0, isStartScene: true },
     ]);
   });
@@ -94,14 +99,21 @@ describe("projectSceneUtils", () => {
     );
 
     expect(result).not.toBeNull();
-    expect(result!.map((scene) => ({
-      id: scene.id,
-      routeId: scene.routeId,
-      sortOrder: scene.sortOrder,
-      isStartScene: scene.isStartScene,
-    }))).toEqual([
+    expect(
+      result!.map((scene) => ({
+        id: scene.id,
+        routeId: scene.routeId,
+        sortOrder: scene.sortOrder,
+        isStartScene: scene.isStartScene,
+      })),
+    ).toEqual([
       { id: "scene-a-1", routeId: "route-a", sortOrder: 0, isStartScene: true },
-      { id: "scene-a-2", routeId: "route-b", sortOrder: 1, isStartScene: false },
+      {
+        id: "scene-a-2",
+        routeId: "route-b",
+        sortOrder: 1,
+        isStartScene: false,
+      },
       { id: "scene-b-1", routeId: "route-b", sortOrder: 0, isStartScene: true },
     ]);
   });
@@ -109,9 +121,17 @@ describe("projectSceneUtils", () => {
   it("同步 editor 场景时会过滤不存在的场景并回填项目字段", () => {
     const result = syncEditorScenesFromProjectScenes(
       routes,
-      [createScene("scene-a-1", "route-a", 0, { title: "新标题", status: "completed" })],
       [
-        createScene("scene-a-1", "route-b", 9, { title: "旧标题", status: "draft" }),
+        createScene("scene-a-1", "route-a", 0, {
+          title: "新标题",
+          status: "completed",
+        }),
+      ],
+      [
+        createScene("scene-a-1", "route-b", 9, {
+          title: "旧标题",
+          status: "draft",
+        }),
         createScene("scene-stale", "route-a", 1),
       ],
     );

@@ -1,10 +1,13 @@
 import {
   createRoute as createProjectRoute,
   type Project,
-} from "../../../../lib/domain/project";
-import { getProjectRepository } from "../../../../lib/repositories/projectRepositoryRuntime";
-import { useAutoSaveStore } from "../../../../lib/store/useAutoSaveStore";
-import type { ProjectSliceCreator, ProjectRouteSlice } from "../projectStore.types";
+} from "@/lib/domain/project";
+import { getProjectRepository } from "@/lib/repositories/projectRepositoryRuntime";
+import { useAutoSaveStore } from "@/lib/store/useAutoSaveStore";
+import type {
+  ProjectSliceCreator,
+  ProjectRouteSlice,
+} from "../projectStore.types";
 
 function saveProjectSnapshot(project: Project) {
   return getProjectRepository().updateProject(project);
@@ -49,7 +52,9 @@ export const createProjectRouteSlice: ProjectSliceCreator<ProjectRouteSlice> = (
       return;
     }
 
-    const targetRoute = currentProject.routes.find((route) => route.id === routeId);
+    const targetRoute = currentProject.routes.find(
+      (route) => route.id === routeId,
+    );
     if (!targetRoute || targetRoute.name === trimmedName) {
       return;
     }

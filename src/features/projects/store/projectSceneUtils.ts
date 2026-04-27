@@ -1,5 +1,5 @@
-import type { Route } from "../../../lib/domain/project";
-import type { Scene } from "../../../lib/domain/scene";
+import type { Route } from "@/lib/domain/project";
+import type { Scene } from "@/lib/domain/scene";
 
 function createProjectSceneOrderComparator(routes: Route[]) {
   const routeOrderById = new Map(
@@ -7,7 +7,8 @@ function createProjectSceneOrderComparator(routes: Route[]) {
   );
 
   return (left: Scene, right: Scene) => {
-    const leftRouteOrder = routeOrderById.get(left.routeId) ?? Number.MAX_SAFE_INTEGER;
+    const leftRouteOrder =
+      routeOrderById.get(left.routeId) ?? Number.MAX_SAFE_INTEGER;
     const rightRouteOrder =
       routeOrderById.get(right.routeId) ?? Number.MAX_SAFE_INTEGER;
 
@@ -27,7 +28,10 @@ export function sortProjectScenes(routes: Route[], scenes: Scene[]) {
   return [...scenes].sort(createProjectSceneOrderComparator(routes));
 }
 
-export function normalizeProjectScenesByRoute(routes: Route[], scenes: Scene[]) {
+export function normalizeProjectScenesByRoute(
+  routes: Route[],
+  scenes: Scene[],
+) {
   const routeOrderById = new Map(
     routes.map((route) => [route.id, route.sortOrder]),
   );
@@ -57,7 +61,9 @@ export function normalizeProjectScenesByRoute(routes: Route[], scenes: Scene[]) 
 
   const unknownRouteScenes = [...groupedScenes.entries()]
     .filter(([routeId]) => !routeOrderById.has(routeId))
-    .sort(([leftRouteId], [rightRouteId]) => leftRouteId.localeCompare(rightRouteId))
+    .sort(([leftRouteId], [rightRouteId]) =>
+      leftRouteId.localeCompare(rightRouteId),
+    )
     .flatMap(([, routeScenes]) =>
       routeScenes
         .sort((left, right) => {
@@ -74,7 +80,10 @@ export function normalizeProjectScenesByRoute(routes: Route[], scenes: Scene[]) 
         })),
     );
 
-  return sortProjectScenes(routes, [...knownRouteScenes, ...unknownRouteScenes]);
+  return sortProjectScenes(routes, [
+    ...knownRouteScenes,
+    ...unknownRouteScenes,
+  ]);
 }
 
 export function swapProjectScenePosition(

@@ -1,8 +1,6 @@
-import type { Project } from "../../../../lib/domain/project";
-import { getProjectRepository } from "../../../../lib/repositories/projectRepositoryRuntime";
-import { useAutoSaveStore } from "../../../../lib/store/useAutoSaveStore";
-import { useEditorStore } from "../../../editor/store/useEditorStore";
-import { syncEditorScenesFromProjectScenes } from "../projectSceneUtils";
+import { getProjectRepository } from "@/lib/repositories/projectRepositoryRuntime";
+import { useAutoSaveStore } from "@/lib/store/useAutoSaveStore";
+import { syncEditorOnProjectHydrate } from "../editorSync";
 import type {
   ProjectHydrationSlice,
   ProjectSliceCreator,
@@ -11,45 +9,6 @@ import type {
 const initialHydrationState: Pick<ProjectHydrationSlice, "currentProject"> = {
   currentProject: null,
 };
-
-function hydrateEditorStateFromProject(project: Project) {
-  const currentEditorState = useEditorStore.getState();
-  const syncedScenes =
-    currentEditorState.scenes.length > 0
-      ? syncEditorScenesFromProjectScenes(
-          project.routes,
-          project.scenes,
-          currentEditorState.scenes,
-        )
-      : project.scenes;
-  const nextScenes = syncedScenes.length > 0 ? syncedScenes : project.scenes;
-  const nextSceneIds = new Set(nextScenes.map((scene) => scene.id));
-
-  useEditorStore.setState({
-    scenes: nextScenes,
-    selectedSceneId:
-      currentEditorState.selectedSceneId &&
-      nextSceneIds.has(currentEditorState.selectedSceneId)
-        ? currentEditorState.selectedSceneId
-        : nextScenes[0]?.id ?? null,
-    links: currentEditorState.links.filter(
-      (link) =>
-        nextSceneIds.has(link.fromSceneId) && nextSceneIds.has(link.toSceneId),
-    ),
-    variables: currentEditorState.variables.filter(
-      (variable) => variable.projectId === project.id,
-    ),
-    selectedVariableId:
-      currentEditorState.selectedVariableId &&
-      currentEditorState.variables.some(
-        (variable) =>
-          variable.id === currentEditorState.selectedVariableId &&
-          variable.projectId === project.id,
-      )
-        ? currentEditorState.selectedVariableId
-        : null,
-  });
-}
 
 export const createProjectHydrationSlice: ProjectSliceCreator<
   ProjectHydrationSlice
@@ -75,7 +34,7 @@ export const createProjectHydrationSlice: ProjectSliceCreator<
     set({
       currentProject: hydratedProject,
     });
-    hydrateEditorStateFromProject(hydratedProject);
+    syncEditorOnProjectHydrate(hydratedProject);
     useAutoSaveStore.getState().markHydrated(true);
   },
 });

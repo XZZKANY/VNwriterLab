@@ -1,11 +1,16 @@
-import type { Project, ProjectTemplate } from "../../../lib/domain/project";
-import type { Scene } from "../../../lib/domain/scene";
+import type { Project, ProjectTemplate } from "@/lib/domain/project";
+import type { Scene } from "@/lib/domain/scene";
 import type { StateCreator } from "zustand";
 
 export type ProjectSceneUpdateInput = Partial<
   Pick<
     Scene,
-    "title" | "summary" | "sceneType" | "status" | "isStartScene" | "isEndingScene"
+    | "title"
+    | "summary"
+    | "sceneType"
+    | "status"
+    | "isStartScene"
+    | "isEndingScene"
   >
 >;
 
@@ -15,7 +20,11 @@ export interface ProjectHydrationSlice {
 }
 
 export interface ProjectLifecycleSlice {
-  createProject: (name: string, summary: string, template?: ProjectTemplate) => void;
+  createProject: (
+    name: string,
+    summary: string,
+    template?: ProjectTemplate,
+  ) => void;
   resetProject: () => void;
 }
 
