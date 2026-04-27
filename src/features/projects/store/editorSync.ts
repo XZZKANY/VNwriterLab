@@ -2,6 +2,8 @@ import { clearChoiceBlockTargetSceneId } from "@/features/editor/store/choiceBlo
 import { useEditorStore } from "@/features/editor/store/useEditorStore";
 import type { Project } from "@/lib/domain/project";
 import type { Scene } from "@/lib/domain/scene";
+import type { ProjectVariable } from "@/lib/domain/variable";
+import type { SceneLink } from "@/features/editor/store/linkUtils";
 import { syncEditorScenesFromProjectScenes } from "./projectSceneUtils";
 
 /**
@@ -69,6 +71,24 @@ export function replaceEditorOnProjectCreate(project: Project) {
     links: [],
     variables: [],
     selectedVariableId: null,
+  });
+}
+
+/**
+ * 导入项目时把 editor store 完整替换为载入的场景/链接/变量。
+ * 与 replaceEditorOnProjectCreate 不同的是这里携带了完整的 links / variables。
+ */
+export function replaceEditorOnProjectImport(input: {
+  scenes: Scene[];
+  links: SceneLink[];
+  variables: ProjectVariable[];
+}) {
+  useEditorStore.setState({
+    scenes: input.scenes,
+    selectedSceneId: input.scenes[0]?.id ?? null,
+    links: input.links,
+    variables: input.variables,
+    selectedVariableId: input.variables[0]?.id ?? null,
   });
 }
 

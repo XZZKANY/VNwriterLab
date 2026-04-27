@@ -12,6 +12,7 @@ type ProjectSliceStore = Parameters<typeof createProjectHydrationSlice>[2];
 const functionKeys = [
   "hydrateLatestProject",
   "createProject",
+  "importProject",
   "resetProject",
   "createRoute",
   "renameRoute",

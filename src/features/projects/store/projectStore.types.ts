@@ -1,6 +1,20 @@
 import type { Project, ProjectTemplate } from "@/lib/domain/project";
 import type { Scene } from "@/lib/domain/scene";
+import type { ProjectVariable } from "@/lib/domain/variable";
+import type { SceneLink } from "@/features/editor/store/linkUtils";
 import type { StateCreator } from "zustand";
+
+/**
+ * 项目导入时一次性提供的完整数据负载。
+ * 与 projectExport.ProjectExportPayload 镜像一致——这样 export 出来的 JSON
+ * 可以直接喂回给 importProject。
+ */
+export interface ProjectImportInput {
+  project: Project;
+  scenes: Scene[];
+  links: SceneLink[];
+  variables: ProjectVariable[];
+}
 
 export type ProjectSceneUpdateInput = Partial<
   Pick<
@@ -25,6 +39,7 @@ export interface ProjectLifecycleSlice {
     summary: string,
     template?: ProjectTemplate,
   ) => void;
+  importProject: (input: ProjectImportInput) => void;
   resetProject: () => void;
 }
 

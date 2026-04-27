@@ -6,6 +6,7 @@ import { useCharacterStore } from "@/features/characters/store/useCharacterStore
 import { useEditorStore } from "@/features/editor/store/useEditorStore";
 import { useLoreStore } from "@/features/lore/store/useLoreStore";
 import { ExportPanel } from "../components/ExportPanel";
+import { ImportPanel } from "../components/ImportPanel";
 import { ProjectCreateForm } from "../components/ProjectCreateForm";
 import { ProjectStatsPanel } from "../components/ProjectStatsPanel";
 import { RecentSceneCard } from "../components/RecentSceneCard";
@@ -36,6 +37,7 @@ export function ProjectHomePage() {
     (state) => state.hydrateLatestProject,
   );
   const createProject = useProjectStore((state) => state.createProject);
+  const importProject = useProjectStore((state) => state.importProject);
   const createRoute = useProjectStore((state) => state.createRoute);
   const renameRoute = useProjectStore((state) => state.renameRoute);
   const editorScenes = useEditorStore((state) => state.scenes);
@@ -139,7 +141,10 @@ export function ProjectHomePage() {
       <h2>项目首页</h2>
       <AutoSaveStatus />
       {!currentProject ? (
-        <ProjectCreateForm onSubmit={createProject} />
+        <>
+          <ProjectCreateForm onSubmit={createProject} />
+          <ImportPanel onImport={importProject} />
+        </>
       ) : (
         <div>
           <h3>{currentProject.name}</h3>
@@ -165,6 +170,7 @@ export function ProjectHomePage() {
             links={projectLinks}
             variables={projectVariables}
           />
+          <ImportPanel onImport={importProject} />
           <SearchPanel
             project={currentProject}
             editorScenes={editorScenes}

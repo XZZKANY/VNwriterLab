@@ -9,6 +9,7 @@ type ProjectStoreApi = Parameters<typeof createProjectStoreState>[2];
 const functionKeys = [
   "hydrateLatestProject",
   "createProject",
+  "importProject",
   "resetProject",
   "createRoute",
   "renameRoute",
