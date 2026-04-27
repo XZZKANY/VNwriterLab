@@ -1,8 +1,8 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { useEditorStore } from "../../editor/store/useEditorStore";
-import { useProjectStore } from "../../projects/store/useProjectStore";
+import { useEditorStore } from "@/features/editor/store/useEditorStore";
+import { useProjectStore } from "@/features/projects/store/useProjectStore";
 import { GraphPage } from "./GraphPage";
 
 describe("GraphPage issue categories", () => {
@@ -68,7 +68,9 @@ describe("GraphPage issue categories", () => {
     const issueSummary = screen.getByRole("region", { name: "问题明细" });
 
     expect(within(issueSummary).getByText("空白场景")).toBeInTheDocument();
-    expect(within(issueSummary).getByText("问题分类：空场景、无出口")).toBeInTheDocument();
+    expect(
+      within(issueSummary).getByText("问题分类：空场景、无出口"),
+    ).toBeInTheDocument();
     expect(
       within(issueSummary).getByText("当前场景还没有任何内容块"),
     ).toBeInTheDocument();
@@ -153,7 +155,9 @@ describe("GraphPage issue categories", () => {
     const issueSummary = screen.getByRole("region", { name: "问题明细" });
 
     expect(within(issueSummary).getByText("待补正文场景")).toBeInTheDocument();
-    expect(within(issueSummary).getByText("问题分类：内容缺失")).toBeInTheDocument();
+    expect(
+      within(issueSummary).getByText("问题分类：内容缺失"),
+    ).toBeInTheDocument();
     expect(
       within(issueSummary).getByText("当前场景还没有任何有效正文或选项文案"),
     ).toBeInTheDocument();

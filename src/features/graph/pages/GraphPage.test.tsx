@@ -2,8 +2,8 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { useProjectStore } from "../../projects/store/useProjectStore";
-import { useEditorStore } from "../../editor/store/useEditorStore";
+import { useProjectStore } from "@/features/projects/store/useProjectStore";
+import { useEditorStore } from "@/features/editor/store/useEditorStore";
 import { GraphPage } from "./GraphPage";
 
 function EditorProbe() {
@@ -34,9 +34,7 @@ describe("GraphPage", () => {
   it("显示分支图页标题与筛选入口", () => {
     renderGraphPage();
 
-    expect(
-      screen.getByRole("heading", { name: "分支图" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "分支图" })).toBeInTheDocument();
     expect(screen.getByLabelText("路线筛选")).toBeInTheDocument();
     expect(screen.getByLabelText("只看问题节点")).toBeInTheDocument();
   });
@@ -341,8 +339,12 @@ describe("GraphPage", () => {
       name: "条件摘要",
     });
 
-    expect(within(conditionSummary).getByText("路线一开端")).toBeInTheDocument();
-    expect(within(conditionSummary).getByText("路线一节点")).toBeInTheDocument();
+    expect(
+      within(conditionSummary).getByText("路线一开端"),
+    ).toBeInTheDocument();
+    expect(
+      within(conditionSummary).getByText("路线一节点"),
+    ).toBeInTheDocument();
     expect(
       within(conditionSummary).getByText(/前往路线一节点：勇气值 ≥ 3/),
     ).toBeInTheDocument();
@@ -511,13 +513,11 @@ describe("GraphPage", () => {
       name: "条件摘要",
     });
 
-    expect(within(conditionSummary).queryByText("起点")).not.toBeInTheDocument();
     expect(
-      within(conditionSummary).getByText("问题节点"),
-    ).toBeInTheDocument();
-    expect(
-      within(conditionSummary).getByText("前置节点"),
-    ).toBeInTheDocument();
+      within(conditionSummary).queryByText("起点"),
+    ).not.toBeInTheDocument();
+    expect(within(conditionSummary).getByText("问题节点")).toBeInTheDocument();
+    expect(within(conditionSummary).getByText("前置节点")).toBeInTheDocument();
     expect(
       within(conditionSummary).getByText(/从前置节点进入：信赖值 ≥ 5/),
     ).toBeInTheDocument();
@@ -661,7 +661,9 @@ describe("GraphPage", () => {
     });
 
     expect(within(issueSummary).getByText("起点")).toBeInTheDocument();
-    expect(within(issueSummary).getByText("问题分类：条件异常")).toBeInTheDocument();
+    expect(
+      within(issueSummary).getByText("问题分类：条件异常"),
+    ).toBeInTheDocument();
     expect(
       within(issueSummary).getByText("条件块引用了已删除变量"),
     ).toBeInTheDocument();
@@ -682,12 +684,8 @@ describe("GraphPage", () => {
     await user.click(screen.getByLabelText("只看问题节点"));
 
     expect(within(issueSummary).getByText("起点")).toBeInTheDocument();
-    expect(
-      within(issueSummary).getByText("前置节点"),
-    ).toBeInTheDocument();
-    expect(
-      within(issueSummary).getByText("问题节点"),
-    ).toBeInTheDocument();
+    expect(within(issueSummary).getByText("前置节点")).toBeInTheDocument();
+    expect(within(issueSummary).getByText("问题节点")).toBeInTheDocument();
     expect(
       within(issueSummary).getByText("选项块副作用引用了已删除变量"),
     ).toBeInTheDocument();

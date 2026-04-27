@@ -1,8 +1,11 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useEditorStore } from "../../editor/store/useEditorStore";
-import { useProjectStore } from "../../projects/store/useProjectStore";
+import { useEditorStore } from "@/features/editor/store/useEditorStore";
+import { useProjectStore } from "@/features/projects/store/useProjectStore";
+import { GraphConditionSummary } from "../components/GraphConditionSummary";
+import { GraphEdgeSummary } from "../components/GraphEdgeSummary";
 import { GraphFilters } from "../components/GraphFilters";
+import { GraphIssueSummary } from "../components/GraphIssueSummary";
 import { SceneGraphCanvas } from "../components/SceneGraphCanvas";
 import { applySceneGraphFilters, buildSceneGraph } from "../lib/graphData";
 
@@ -27,10 +30,9 @@ export function GraphPage() {
   const [routeFilter, setRouteFilter] = useState<"all" | "single">("all");
   const [selectedRouteId, setSelectedRouteId] = useState("");
   const [questionOnly, setQuestionOnly] = useState(false);
-  const activeRouteId =
-    routes.some((route) => route.id === selectedRouteId)
-      ? selectedRouteId
-      : routes[0]?.id ?? "";
+  const activeRouteId = routes.some((route) => route.id === selectedRouteId)
+    ? selectedRouteId
+    : (routes[0]?.id ?? "");
   const rawGraph = useMemo(
     () => buildSceneGraph(scenes, links, variables),
     [scenes, links, variables],
@@ -57,7 +59,7 @@ export function GraphPage() {
       setSelectedRouteId((currentRouteId) =>
         routes.some((route) => route.id === currentRouteId)
           ? currentRouteId
-          : routes[0]?.id ?? "",
+          : (routes[0]?.id ?? ""),
       );
     }
   }
@@ -65,9 +67,7 @@ export function GraphPage() {
   return (
     <section>
       <h2>分支图</h2>
-      <div
-        style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 16 }}
-      >
+      <div className="layout-split layout-split--wide">
         <GraphFilters
           routes={routes}
           routeFilter={routeFilter}
@@ -81,79 +81,17 @@ export function GraphPage() {
           {graph.nodes.length > 0 ? (
             <>
               <SceneGraphCanvas nodes={graph.nodes} edges={graph.edges} />
-              <section aria-label="条件摘要">
-                <h3>条件摘要</h3>
-                <ul>
-                  {graph.nodes.map((node) => {
-                    const nodeSummaries = graph.conditionSummaries.filter(
-                      (summary) => summary.sceneId === node.id,
-                    );
-
-                    return (
-                      <li key={node.id}>
-                        <strong>{node.data.label}</strong>
-                        <button type="button" onClick={() => handleOpenScene(node.id)}>
-                          返回编辑：{node.data.label}
-                        </button>
-                        {nodeSummaries.length > 0 ? (
-                          <ul>
-                            {nodeSummaries.map((summary) => (
-                              <li key={summary.linkId}>
-                                {summary.linkLabel}：{summary.summary}
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p>暂无条件摘要。</p>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </section>
-              <section aria-label="问题明细">
-                <h3>问题明细</h3>
-                <ul>
-                  {graph.nodes.map((node) => {
-                    const nodeIssues = graph.issueSummaries.find(
-                      (summary) => summary.sceneId === node.id,
-                    );
-
-                    return (
-                      <li key={node.id}>
-                        <strong>{node.data.label}</strong>
-                        <button type="button" onClick={() => handleOpenScene(node.id)}>
-                          返回编辑：{node.data.label}
-                        </button>
-                        {nodeIssues?.issues.length ? (
-                          <>
-                            <p>
-                              问题分类：
-                              {nodeIssues.categories.join("、")}
-                            </p>
-                            <ul>
-                              {nodeIssues.issues.map((issue, index) => (
-                                <li key={`${node.id}-${index}`}>{issue}</li>
-                              ))}
-                            </ul>
-                          </>
-                        ) : (
-                          <p>暂无问题明细。</p>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </section>
-              {graph.edges.length > 0 ? (
-                <ul aria-label="连线摘要">
-                  {graph.edges.map((edge) => (
-                    <li key={edge.id}>
-                      {edge.label ? String(edge.label) : "未命名连线"}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
+              <GraphConditionSummary
+                nodes={graph.nodes}
+                conditionSummaries={graph.conditionSummaries}
+                onOpenScene={handleOpenScene}
+              />
+              <GraphIssueSummary
+                nodes={graph.nodes}
+                issueSummaries={graph.issueSummaries}
+                onOpenScene={handleOpenScene}
+              />
+              <GraphEdgeSummary edges={graph.edges} />
             </>
           ) : scenes.length > 0 ? (
             <p>当前筛选条件下没有可显示的场景。</p>

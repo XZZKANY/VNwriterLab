@@ -1,4 +1,4 @@
-import type { Route } from "../../../lib/domain/project";
+import type { Route } from "@/lib/domain/project";
 
 interface GraphFiltersProps {
   routes: Route[];
@@ -27,7 +27,9 @@ export function GraphFilters({
           aria-label="路线筛选"
           value={routeFilter}
           onChange={(event) =>
-            onRouteFilterChange(event.target.value === "single" ? "single" : "all")
+            onRouteFilterChange(
+              event.target.value === "single" ? "single" : "all",
+            )
           }
         >
           <option value="all">全部路线</option>

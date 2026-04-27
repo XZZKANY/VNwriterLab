@@ -1,63 +1,26 @@
-import type { SceneBlock } from "../../../lib/domain/block";
-import type { Scene } from "../../../lib/domain/scene";
-import type { ProjectVariable } from "../../../lib/domain/variable";
-import { parseChoiceBlockMeta } from "../../editor/store/choiceBlock";
-import { parseConditionBlockMeta } from "../../editor/store/conditionBlock";
-import { parseNoteBlockMeta } from "../../editor/store/noteBlock";
-import type { SceneLink } from "../../editor/store/linkUtils";
-import type { Edge, Node } from "reactflow";
+import type { Scene } from "@/lib/domain/scene";
+import type { ProjectVariable } from "@/lib/domain/variable";
+import type { SceneLink } from "@/features/editor/store/linkUtils";
+import {
+  collectConditionBlocks,
+  formatConditionSummary,
+} from "./graphConditionSummary";
+import type { SceneGraphData, SceneGraphIssueSummary } from "./graphData.types";
+import {
+  collectSceneIssues,
+  collectUnresolvedForeshadowMessagesByScene,
+} from "./graphIssueDetector";
 
-export interface SceneGraphConditionSummary {
-  sceneId: string;
-  sceneTitle: string;
-  linkId: string;
-  linkLabel: string;
-  summary: string;
-}
-
-export type SceneGraphIssueCode =
-  | "emptyScene"
-  | "contentGap"
-  | "noIncoming"
-  | "noOutgoing"
-  | "unresolvedForeshadow"
-  | "missingConditionVariable"
-  | "deletedConditionVariable"
-  | "missingTargetScene"
-  | "deletedEffectVariable";
-
-export interface SceneGraphIssue {
-  code: SceneGraphIssueCode;
-  category: string;
-  message: string;
-}
-
-export interface SceneGraphIssueSummary {
-  sceneId: string;
-  sceneTitle: string;
-  categories: string[];
-  issues: string[];
-}
-
-export interface SceneGraphNodeData {
-  label: string;
-  routeId: string;
-  isStartScene: boolean;
-  isEndingScene: boolean;
-}
-
-export interface SceneGraphViewFilters {
-  routeFilter: "all" | "single";
-  routeId: string | null;
-  questionOnly: boolean;
-}
-
-export interface SceneGraphData {
-  nodes: Node<SceneGraphNodeData>[];
-  edges: Edge[];
-  conditionSummaries: SceneGraphConditionSummary[];
-  issueSummaries: SceneGraphIssueSummary[];
-}
+export type {
+  SceneGraphConditionSummary,
+  SceneGraphData,
+  SceneGraphIssue,
+  SceneGraphIssueCode,
+  SceneGraphIssueSummary,
+  SceneGraphNodeData,
+  SceneGraphViewFilters,
+} from "./graphData.types";
+export { applySceneGraphFilters } from "./graphFilters";
 
 function buildVariableMap(variables: ProjectVariable[]) {
   return new Map(variables.map((variable) => [variable.id, variable]));
@@ -67,240 +30,26 @@ function buildSceneMap(scenes: Scene[]) {
   return new Map(scenes.map((scene) => [scene.id, scene]));
 }
 
-function createIssue(
-  code: SceneGraphIssueCode,
-  category: string,
-  message: string,
-): SceneGraphIssue {
-  return {
-    code,
-    category,
-    message,
-  };
-}
-
-function hasMeaningfulSceneContent(scene: Scene) {
-  return scene.blocks.some((block) => {
-    if (block.blockType === "dialogue" || block.blockType === "narration") {
-      return block.contentText.trim().length > 0;
+function sortScenesForLayout(scenes: Scene[]) {
+  return [...scenes].sort((left, right) => {
+    if (left.sortOrder === right.sortOrder) {
+      return left.title.localeCompare(right.title, "zh-CN");
     }
 
-    if (block.blockType === "choice") {
-      return parseChoiceBlockMeta(block.metaJson).label.trim().length > 0;
-    }
-
-    return false;
+    return left.sortOrder - right.sortOrder;
   });
 }
 
-function collectSceneIssues(
-  scene: Scene,
-  sceneById: Map<string, Scene>,
-  variablesById: Map<string, ProjectVariable>,
-  incomingCount: number,
-  outgoingCount: number,
-  unresolvedForeshadowMessages: string[],
-) {
-  const issues: SceneGraphIssue[] = [];
-
-  if (scene.blocks.length === 0) {
-    issues.push(
-      createIssue("emptyScene", "空场景", "当前场景还没有任何内容块"),
-    );
-  } else if (!hasMeaningfulSceneContent(scene)) {
-    issues.push(
-      createIssue(
-        "contentGap",
-        "内容缺失",
-        "当前场景还没有任何有效正文或选项文案",
-      ),
-    );
-  }
-
-  if (!scene.isEndingScene && outgoingCount === 0) {
-    issues.push(
-      createIssue("noOutgoing", "无出口", "非结局场景且没有任何出边"),
-    );
-  }
-
-  if (!scene.isStartScene && incomingCount === 0) {
-    issues.push(
-      createIssue("noIncoming", "无入边", "没有任何入边且不是起始场景"),
-    );
-  }
-
-  unresolvedForeshadowMessages.forEach((message) => {
-    issues.push(createIssue("unresolvedForeshadow", "伏笔未回收", message));
-  });
-
-  const sortedBlocks = [...scene.blocks].sort(
-    (left, right) => left.sortOrder - right.sortOrder,
-  );
-
-  sortedBlocks.forEach((block) => {
-    if (block.blockType === "condition") {
-      const condition = parseConditionBlockMeta(block.metaJson);
-      condition.conditions.forEach((item) => {
-        if (!item.variableId) {
-          issues.push(
-            createIssue(
-              "missingConditionVariable",
-              "条件异常",
-              "条件块未选择变量",
-            ),
-          );
-          return;
-        }
-
-        if (!variablesById.has(item.variableId)) {
-          issues.push(
-            createIssue(
-              "deletedConditionVariable",
-              "条件异常",
-              "条件块引用了已删除变量",
-            ),
-          );
-        }
-      });
-      return;
-    }
-
-    if (block.blockType !== "choice") {
-      return;
-    }
-
-    const choice = parseChoiceBlockMeta(block.metaJson);
-    if (choice.targetSceneId && !sceneById.has(choice.targetSceneId)) {
-      issues.push(
-        createIssue(
-          "missingTargetScene",
-          "跳转异常",
-          "选项块跳转到不存在的场景",
-        ),
-      );
-    }
-
-    if (choice.effectVariableId && !variablesById.has(choice.effectVariableId)) {
-      issues.push(
-        createIssue(
-          "deletedEffectVariable",
-          "副作用异常",
-          "选项块副作用引用了已删除变量",
-        ),
-      );
-    }
-  });
-
-  return issues;
-}
-
-function formatConditionSummary(
-  block: SceneBlock,
-  variablesById: Map<string, ProjectVariable>,
-) {
-  const condition = parseConditionBlockMeta(block.metaJson);
-  if (condition.conditions.length === 0) {
-    return "无条件";
-  }
-
-  const content = condition.conditions
-    .map((item) => {
-      const variable = item.variableId
-        ? variablesById.get(item.variableId) ?? null
-        : null;
-      const variableName =
-        variable?.name ?? (item.variableId ? "已删除变量" : "未选择变量");
-
-      if (item.operator === "gte") {
-        return `${variableName} ≥ ${item.compareValue}`;
-      }
-
-      return `${variableName} 为真`;
-    })
-    .join("；");
-
-  return condition.logicMode === "any" ? `任一满足：${content}` : content;
-}
-
-function collectUnresolvedForeshadowMessagesByScene(scenes: Scene[]) {
-  const foreshadowThreads = new Map<
-    string,
-    {
-      title: string;
-      sceneId: string;
-    }
-  >();
-  const payoffThreadIds = new Set<string>();
-
-  scenes.forEach((scene) => {
-    scene.blocks.forEach((block) => {
-      if (block.blockType !== "note") {
-        return;
-      }
-
-      const noteMeta = parseNoteBlockMeta(block.metaJson);
-      if (!noteMeta.threadId) {
-        return;
-      }
-
-      if (noteMeta.noteType === "foreshadow") {
-        foreshadowThreads.set(noteMeta.threadId, {
-          title: block.contentText.trim() || noteMeta.threadId,
-          sceneId: scene.id,
-        });
-        return;
-      }
-
-      if (noteMeta.noteType === "payoff") {
-        payoffThreadIds.add(noteMeta.threadId);
-      }
-    });
-  });
-
-  const unresolvedMessagesByScene = new Map<string, string[]>();
-
-  for (const [threadId, info] of foreshadowThreads) {
-    if (payoffThreadIds.has(threadId)) {
-      continue;
-    }
-
-    const messages = unresolvedMessagesByScene.get(info.sceneId) ?? [];
-    messages.push(`伏笔「${info.title}」尚未找到回收点`);
-    unresolvedMessagesByScene.set(info.sceneId, messages);
-  }
-
-  return unresolvedMessagesByScene;
-}
-
-function collectConditionBlocks(scene: Scene, sourceBlockId: string | null) {
-  if (!sourceBlockId) {
-    return [];
-  }
-
-  const sortedBlocks = [...scene.blocks].sort(
-    (left, right) => left.sortOrder - right.sortOrder,
-  );
-  const sourceBlockIndex = sortedBlocks.findIndex(
-    (block) => block.id === sourceBlockId,
-  );
-
-  if (sourceBlockIndex <= 0) {
-    return [];
-  }
-
-  const conditionBlocks: SceneBlock[] = [];
-  for (let index = sourceBlockIndex - 1; index >= 0; index -= 1) {
-    const currentBlock = sortedBlocks[index];
-    if (currentBlock?.blockType !== "condition") {
-      break;
-    }
-
-    conditionBlocks.unshift(currentBlock);
-  }
-
-  return conditionBlocks;
-}
-
+/**
+ * 把场景、连线、变量数据组装成一张完整的分支图：
+ * 节点 / 连边 / 条件摘要 / 问题摘要 在同一次遍历中对齐。
+ *
+ * 子模块拆分：
+ * - 节点位置和边以纯映射方式产出，不外抽。
+ * - 条件摘要 → `graphConditionSummary.ts`
+ * - 问题摘要 → `graphIssueDetector.ts`
+ * - 视图过滤 → `graphFilters.ts`（通过 `applySceneGraphFilters` 重新导出）
+ */
 export function buildSceneGraph(
   scenes: Scene[],
   links: SceneLink[],
@@ -310,13 +59,7 @@ export function buildSceneGraph(
   const sceneById = buildSceneMap(scenes);
   const unresolvedForeshadowMessagesByScene =
     collectUnresolvedForeshadowMessagesByScene(scenes);
-  const orderedScenes = [...scenes].sort((left, right) => {
-    if (left.sortOrder === right.sortOrder) {
-      return left.title.localeCompare(right.title, "zh-CN");
-    }
-
-    return left.sortOrder - right.sortOrder;
-  });
+  const orderedScenes = sortScenesForLayout(scenes);
 
   return {
     nodes: orderedScenes.map((scene, index) => ({
@@ -392,66 +135,6 @@ export function buildSceneGraph(
           issues: issues.map((issue) => issue.message),
         };
       })
-      .filter(
-        (summary): summary is SceneGraphIssueSummary => summary !== null,
-      ),
-  };
-}
-
-export function applySceneGraphFilters(
-  graph: SceneGraphData,
-  filters: SceneGraphViewFilters,
-): SceneGraphData {
-  const visibleSceneIds = new Set(
-    graph.nodes
-      .filter((node) =>
-        filters.routeFilter === "all" || node.data.routeId === filters.routeId,
-      )
-      .map((node) => node.id),
-  );
-  const routeFilteredEdges = graph.edges.filter(
-    (edge) =>
-      visibleSceneIds.has(edge.source) && visibleSceneIds.has(edge.target),
-  );
-  const routeFilteredEdgeIds = new Set(routeFilteredEdges.map((edge) => edge.id));
-  const routeFilteredGraph: SceneGraphData = {
-    nodes: graph.nodes.filter((node) => visibleSceneIds.has(node.id)),
-    edges: routeFilteredEdges,
-    conditionSummaries: graph.conditionSummaries.filter(
-      (summary) =>
-        visibleSceneIds.has(summary.sceneId) &&
-        routeFilteredEdgeIds.has(summary.linkId),
-    ),
-    issueSummaries: graph.issueSummaries.filter((summary) =>
-      visibleSceneIds.has(summary.sceneId),
-    ),
-  };
-
-  if (!filters.questionOnly) {
-    return routeFilteredGraph;
-  }
-
-  const questionSceneIds = new Set(
-    routeFilteredGraph.issueSummaries.map((summary) => summary.sceneId),
-  );
-  const questionEdges = routeFilteredGraph.edges.filter(
-    (edge) =>
-      questionSceneIds.has(edge.source) && questionSceneIds.has(edge.target),
-  );
-  const questionEdgeIds = new Set(questionEdges.map((edge) => edge.id));
-
-  return {
-    nodes: routeFilteredGraph.nodes.filter((node) =>
-      questionSceneIds.has(node.id),
-    ),
-    edges: questionEdges,
-    conditionSummaries: routeFilteredGraph.conditionSummaries.filter(
-      (summary) =>
-        questionSceneIds.has(summary.sceneId) &&
-        questionEdgeIds.has(summary.linkId),
-    ),
-    issueSummaries: routeFilteredGraph.issueSummaries.filter((summary) =>
-      questionSceneIds.has(summary.sceneId),
-    ),
+      .filter((summary): summary is SceneGraphIssueSummary => summary !== null),
   };
 }

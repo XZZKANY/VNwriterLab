@@ -1,4 +1,9 @@
-import ReactFlow, { Background, Controls, type Edge, type Node } from "reactflow";
+import ReactFlow, {
+  Background,
+  Controls,
+  type Edge,
+  type Node,
+} from "reactflow";
 import "reactflow/dist/style.css";
 
 interface SceneGraphCanvasProps {

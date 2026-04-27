@@ -3,50 +3,53 @@ import { applySceneGraphFilters, buildSceneGraph } from "./graphData";
 
 describe("buildSceneGraph", () => {
   it("会根据场景和连线生成分支图节点与边", () => {
-    const graph = buildSceneGraph([
-      {
-        id: "s1",
-        projectId: "p1",
-        routeId: "r1",
-        title: "序章",
-        summary: "",
-        sceneType: "normal",
-        status: "draft",
-        chapterLabel: "",
-        sortOrder: 0,
-        isStartScene: true,
-        isEndingScene: false,
-        notes: "",
-        blocks: [],
-      },
-      {
-        id: "s2",
-        projectId: "p1",
-        routeId: "r1",
-        title: "旧校舍",
-        summary: "",
-        sceneType: "branch",
-        status: "draft",
-        chapterLabel: "",
-        sortOrder: 1,
-        isStartScene: false,
-        isEndingScene: false,
-        notes: "",
-        blocks: [],
-      },
-    ], [
-      {
-        id: "l1",
-        projectId: "p1",
-        fromSceneId: "s1",
-        toSceneId: "s2",
-        linkType: "choice",
-        sourceBlockId: "b2",
-        label: "去旧校舍",
-        conditionId: null,
-        priorityOrder: 0,
-      },
-    ]);
+    const graph = buildSceneGraph(
+      [
+        {
+          id: "s1",
+          projectId: "p1",
+          routeId: "r1",
+          title: "序章",
+          summary: "",
+          sceneType: "normal",
+          status: "draft",
+          chapterLabel: "",
+          sortOrder: 0,
+          isStartScene: true,
+          isEndingScene: false,
+          notes: "",
+          blocks: [],
+        },
+        {
+          id: "s2",
+          projectId: "p1",
+          routeId: "r1",
+          title: "旧校舍",
+          summary: "",
+          sceneType: "branch",
+          status: "draft",
+          chapterLabel: "",
+          sortOrder: 1,
+          isStartScene: false,
+          isEndingScene: false,
+          notes: "",
+          blocks: [],
+        },
+      ],
+      [
+        {
+          id: "l1",
+          projectId: "p1",
+          fromSceneId: "s1",
+          toSceneId: "s2",
+          linkType: "choice",
+          sourceBlockId: "b2",
+          label: "去旧校舍",
+          conditionId: null,
+          priorityOrder: 0,
+        },
+      ],
+    );
 
     expect(graph.nodes).toEqual([
       expect.objectContaining({
@@ -700,10 +703,7 @@ describe("buildSceneGraph", () => {
         expect.objectContaining({
           sceneId: "r1-s1",
           sceneTitle: "起点",
-          issues: [
-            "条件块引用了已删除变量",
-            "条件块未选择变量",
-          ],
+          issues: ["条件块引用了已删除变量", "条件块未选择变量"],
         }),
         expect.objectContaining({
           sceneId: "r1-s2",
@@ -714,10 +714,7 @@ describe("buildSceneGraph", () => {
         expect.objectContaining({
           sceneId: "r2-s1",
           sceneTitle: "另一条路线",
-          issues: [
-            "选项块跳转到不存在的场景",
-            "选项块副作用引用了已删除变量",
-          ],
+          issues: ["选项块跳转到不存在的场景", "选项块副作用引用了已删除变量"],
         }),
       ]),
     );
