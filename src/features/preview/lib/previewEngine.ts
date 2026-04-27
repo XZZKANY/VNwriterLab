@@ -1,8 +1,8 @@
-import type { SceneBlock } from "../../../lib/domain/block";
-import type { ProjectVariable } from "../../../lib/domain/variable";
-import { parseConditionBlockMeta } from "../../editor/store/conditionBlock";
-import { parseChoiceBlockMeta } from "../../editor/store/choiceBlock";
-import type { SceneLink } from "../../editor/store/linkUtils";
+import type { SceneBlock } from "@/lib/domain/block";
+import type { ProjectVariable } from "@/lib/domain/variable";
+import { parseConditionBlockMeta } from "@/features/editor/store/conditionBlock";
+import { parseChoiceBlockMeta } from "@/features/editor/store/choiceBlock";
+import type { SceneLink } from "@/features/editor/store/linkUtils";
 
 function evaluateConditionBlock(
   conditionBlock: SceneBlock,
@@ -15,7 +15,9 @@ function evaluateConditionBlock(
   }
 
   const evaluateItem = (item: (typeof condition.conditions)[number]) => {
-    const variable = variables.find((candidate) => candidate.id === item.variableId);
+    const variable = variables.find(
+      (candidate) => candidate.id === item.variableId,
+    );
     if (!variable) {
       return false;
     }

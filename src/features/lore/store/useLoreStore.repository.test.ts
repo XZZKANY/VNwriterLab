@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { LoreEntry } from "../../../lib/domain/lore";
-import { useAutoSaveStore } from "../../../lib/store/useAutoSaveStore";
+import type { LoreEntry } from "@/lib/domain/lore";
+import { useAutoSaveStore } from "@/lib/store/useAutoSaveStore";
 import {
   resetReferenceRepositoryForTesting,
   setReferenceRepositoryForTesting,
-} from "../../../lib/repositories/referenceRepositoryRuntime";
+} from "@/lib/repositories/referenceRepositoryRuntime";
 import { useLoreStore } from "./useLoreStore";
 
 function createLoreEntry(overrides: Partial<LoreEntry> = {}): LoreEntry {

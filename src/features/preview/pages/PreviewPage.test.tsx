@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
-import { useEditorStore } from "../../editor/store/useEditorStore";
+import { useEditorStore } from "@/features/editor/store/useEditorStore";
 import { PreviewPage } from "./PreviewPage";
 
 describe("PreviewPage", () => {
@@ -102,7 +102,9 @@ describe("PreviewPage", () => {
 
     expect(screen.getByText("序章")).toBeInTheDocument();
     expect(screen.getByText("雨夜里传来脚步声。")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "去旧校舍" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "去旧校舍" }),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "去旧校舍" }));
 
@@ -340,7 +342,9 @@ describe("PreviewPage", () => {
 
     expect(useEditorStore.getState().variables[0]?.defaultValue).toBe(0);
     expect(screen.getByText("仓库门前")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "打开仓库门" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "打开仓库门" }),
+    ).toBeInTheDocument();
   });
 
   it("起始场景不满足进入条件时会阻止进入", async () => {
@@ -530,7 +534,9 @@ describe("PreviewPage", () => {
 
     await user.click(screen.getByRole("button", { name: "从开头预览" }));
 
-    expect(screen.getByRole("button", { name: "去旧校舍" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "去旧校舍" }),
+    ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "去旧校舍" }));
     expect(screen.getByText("旧校舍")).toBeInTheDocument();
     expect(screen.getByText("成功进入后的内容。")).toBeInTheDocument();

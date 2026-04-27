@@ -1,5 +1,5 @@
-import type { Scene } from "../../../lib/domain/scene";
-import type { ProjectVariable } from "../../../lib/domain/variable";
+import type { Scene } from "@/lib/domain/scene";
+import type { ProjectVariable } from "@/lib/domain/variable";
 
 interface ChoiceBlockEditorProps {
   label: string;

@@ -3,7 +3,7 @@ import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import { AppShell } from "../app/layouts/AppShell";
 
 describe("V1 acceptance smoke", () => {
-  it("导航中包含 V1 六个核心页面", () => {
+  it("导航中包含 V1 七个核心页面", () => {
     const router = createMemoryRouter([
       {
         path: "/",
@@ -17,6 +17,7 @@ describe("V1 acceptance smoke", () => {
     expect(screen.getByRole("link", { name: "项目首页" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "剧情编辑" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "分支图" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "多视图" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "角色" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "设定" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "预览" })).toBeInTheDocument();

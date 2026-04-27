@@ -6,13 +6,16 @@ import type { SceneBlock } from "../domain/block";
 import type { SceneLink } from "../domain/link";
 import type { Scene } from "../domain/scene";
 import type { ProjectVariable } from "../domain/variable";
-
-const EDITOR_STORAGE_KEY = "vn-writer-lab.editor-store";
+import { EDITOR_STORAGE_KEY } from "@/features/editor/store/useEditorStore";
 
 function createFakeProjectRepository(initialProjects: Project[] = []) {
-  const projects = new Map(initialProjects.map((project) => [project.id, project]));
+  const projects = new Map(
+    initialProjects.map((project) => [project.id, project]),
+  );
   const listProjects = vi.fn(async () => [...projects.values()]);
-  const getProject = vi.fn(async (projectId: string) => projects.get(projectId) ?? null);
+  const getProject = vi.fn(
+    async (projectId: string) => projects.get(projectId) ?? null,
+  );
   const createProject = vi.fn(
     async (input: {
       name: string;
@@ -74,19 +77,25 @@ function createFakeReferenceRepository(input?: {
   return {
     repository: {
       listCharacters: vi.fn(async (projectId: string) =>
-        [...characters.values()].filter((character) => character.projectId === projectId),
+        [...characters.values()].filter(
+          (character) => character.projectId === projectId,
+        ),
       ),
       saveCharacter: vi.fn(async (character: Character) => {
         characters.set(character.id, character);
       }),
       listLoreEntries: vi.fn(async (projectId: string) =>
-        [...loreEntries.values()].filter((entry) => entry.projectId === projectId),
+        [...loreEntries.values()].filter(
+          (entry) => entry.projectId === projectId,
+        ),
       ),
       saveLoreEntry: vi.fn(async (entry: LoreEntry) => {
         loreEntries.set(entry.id, entry);
       }),
       listVariables: vi.fn(async (projectId: string) =>
-        [...variables.values()].filter((variable) => variable.projectId === projectId),
+        [...variables.values()].filter(
+          (variable) => variable.projectId === projectId,
+        ),
       ),
       saveVariable: vi.fn(async (variable: ProjectVariable) => {
         variables.set(variable.id, variable);
@@ -233,12 +242,13 @@ describe("store persistence", () => {
     vi.resetModules();
     await setFakeProjectRepository(fake.repository);
 
-    const { useProjectStore: reloadedProjectStore } = await import(
-      "../../features/projects/store/useProjectStore"
-    );
+    const { useProjectStore: reloadedProjectStore } =
+      await import("../../features/projects/store/useProjectStore");
     await reloadedProjectStore.getState().hydrateLatestProject();
 
-    expect(reloadedProjectStore.getState().currentProject?.name).toBe("雨夜回响");
+    expect(reloadedProjectStore.getState().currentProject?.name).toBe(
+      "雨夜回响",
+    );
     expect(reloadedProjectStore.getState().currentProject?.summary).toBe(
       "一段校园悬疑故事",
     );
@@ -272,17 +282,20 @@ describe("store persistence", () => {
     vi.resetModules();
     await setFakeProjectRepository(fake.repository);
 
-    const { useProjectStore: reloadedProjectStore } = await import(
-      "../../features/projects/store/useProjectStore"
-    );
+    const { useProjectStore: reloadedProjectStore } =
+      await import("../../features/projects/store/useProjectStore");
     await reloadedProjectStore.getState().hydrateLatestProject();
 
-    expect(reloadedProjectStore.getState().currentProject?.routes).toHaveLength(2);
-    expect(reloadedProjectStore.getState().currentProject?.scenes).toHaveLength(2);
+    expect(reloadedProjectStore.getState().currentProject?.routes).toHaveLength(
+      2,
+    );
+    expect(reloadedProjectStore.getState().currentProject?.scenes).toHaveLength(
+      2,
+    );
     expect(
-      reloadedProjectStore.getState().currentProject?.scenes.map(
-        (scene) => scene.routeId,
-      ),
+      reloadedProjectStore
+        .getState()
+        .currentProject?.scenes.map((scene) => scene.routeId),
     ).toEqual([defaultRouteId, secondRouteId]);
   });
 
@@ -306,9 +319,8 @@ describe("store persistence", () => {
     vi.resetModules();
     await setFakeStoryRepository(fakeStory.repository);
 
-    const { useEditorStore: reloadedEditorStore } = await import(
-      "../../features/editor/store/useEditorStore"
-    );
+    const { useEditorStore: reloadedEditorStore } =
+      await import("../../features/editor/store/useEditorStore");
     await reloadedEditorStore.getState().hydrateScenes("p1");
 
     expect(reloadedEditorStore.getState().scenes).toHaveLength(1);
@@ -331,15 +343,14 @@ describe("store persistence", () => {
     await setFakeReferenceRepository(fakeReference.repository);
 
     useProjectStore.getState().createProject("雨夜回响", "一段校园悬疑故事");
-    useCharacterStore.getState().createCharacter(
-      useProjectStore.getState().currentProject!.id,
-    );
-    useCharacterStore.getState().updateCharacter(
-      useCharacterStore.getState().selectedCharacterId!,
-      {
+    useCharacterStore
+      .getState()
+      .createCharacter(useProjectStore.getState().currentProject!.id);
+    useCharacterStore
+      .getState()
+      .updateCharacter(useCharacterStore.getState().selectedCharacterId!, {
         name: "林夏",
-      },
-    );
+      });
 
     expect(fakeReference.repository.saveCharacter).toHaveBeenCalled();
     expect(useAutoSaveStore.getState().lastSavedAt).not.toBeNull();
@@ -347,14 +358,12 @@ describe("store persistence", () => {
     vi.resetModules();
     await setFakeProjectRepository(fakeProject.repository);
     await setFakeReferenceRepository(fakeReference.repository);
-    const { useProjectStore: reloadedProjectStore } = await import(
-      "../../features/projects/store/useProjectStore"
-    );
+    const { useProjectStore: reloadedProjectStore } =
+      await import("../../features/projects/store/useProjectStore");
     await reloadedProjectStore.getState().hydrateLatestProject();
 
-    const { useCharacterStore: reloadedCharacterStore } = await import(
-      "../../features/characters/store/useCharacterStore"
-    );
+    const { useCharacterStore: reloadedCharacterStore } =
+      await import("../../features/characters/store/useCharacterStore");
     await reloadedCharacterStore
       .getState()
       .hydrateCharacters(reloadedProjectStore.getState().currentProject!.id);
@@ -379,15 +388,14 @@ describe("store persistence", () => {
     await setFakeReferenceRepository(fakeReference.repository);
 
     useProjectStore.getState().createProject("雨夜回响", "一段校园悬疑故事");
-    useLoreStore.getState().createLoreEntry(
-      useProjectStore.getState().currentProject!.id,
-    );
-    useLoreStore.getState().updateLoreEntry(
-      useLoreStore.getState().selectedLoreId!,
-      {
+    useLoreStore
+      .getState()
+      .createLoreEntry(useProjectStore.getState().currentProject!.id);
+    useLoreStore
+      .getState()
+      .updateLoreEntry(useLoreStore.getState().selectedLoreId!, {
         name: "旧校舍",
-      },
-    );
+      });
 
     expect(fakeReference.repository.saveLoreEntry).toHaveBeenCalled();
     expect(useAutoSaveStore.getState().lastSavedAt).not.toBeNull();
@@ -395,14 +403,12 @@ describe("store persistence", () => {
     vi.resetModules();
     await setFakeProjectRepository(fakeProject.repository);
     await setFakeReferenceRepository(fakeReference.repository);
-    const { useProjectStore: reloadedProjectStore } = await import(
-      "../../features/projects/store/useProjectStore"
-    );
+    const { useProjectStore: reloadedProjectStore } =
+      await import("../../features/projects/store/useProjectStore");
     await reloadedProjectStore.getState().hydrateLatestProject();
 
-    const { useLoreStore: reloadedLoreStore } = await import(
-      "../../features/lore/store/useLoreStore"
-    );
+    const { useLoreStore: reloadedLoreStore } =
+      await import("../../features/lore/store/useLoreStore");
     await reloadedLoreStore
       .getState()
       .hydrateLoreEntries(reloadedProjectStore.getState().currentProject!.id);
@@ -449,25 +455,24 @@ describe("store persistence", () => {
       ],
     });
 
-      expect(localStorage.getItem(EDITOR_STORAGE_KEY)).toBeNull();
-      expect(fakeReference.repository.saveVariables).toHaveBeenCalled();
-      expect(useAutoSaveStore.getState().lastSavedAt).not.toBeNull();
-  
-      vi.resetModules();
-      await setFakeReferenceRepository(fakeReference.repository);
-      await setFakeStoryRepository(fakeStory.repository);
-  
-      const { useEditorStore: reloadedEditorStore } = await import(
-        "../../features/editor/store/useEditorStore"
-      );
-      await reloadedEditorStore.getState().hydrateScenes("p1");
-      await reloadedEditorStore.getState().hydrateVariables("p1");
-  
-      expect(reloadedEditorStore.getState().variables).toHaveLength(1);
+    expect(localStorage.getItem(EDITOR_STORAGE_KEY)).toBeNull();
+    expect(fakeReference.repository.saveVariables).toHaveBeenCalled();
+    expect(useAutoSaveStore.getState().lastSavedAt).not.toBeNull();
+
+    vi.resetModules();
+    await setFakeReferenceRepository(fakeReference.repository);
+    await setFakeStoryRepository(fakeStory.repository);
+
+    const { useEditorStore: reloadedEditorStore } =
+      await import("../../features/editor/store/useEditorStore");
+    await reloadedEditorStore.getState().hydrateScenes("p1");
+    await reloadedEditorStore.getState().hydrateVariables("p1");
+
+    expect(reloadedEditorStore.getState().variables).toHaveLength(1);
     expect(reloadedEditorStore.getState().variables[0]?.name).toBe("拥有钥匙");
     expect(
       reloadedEditorStore.getState().scenes[0]?.blocks[0]?.metaJson,
-    ).toContain("\"conditions\"");
+    ).toContain('"conditions"');
   });
   it("更新和删除场景后会持久化并在重载后恢复", async () => {
     const fake = createFakeProjectRepository();
@@ -492,11 +497,13 @@ describe("store persistence", () => {
     useEditorStore.getState().importScene(secondScene);
     useEditorStore.getState().selectScene(firstScene.id);
     useEditorStore.getState().addBlock("narration");
-    useEditorStore.getState().updateBlockContent(
-      firstScene.id,
-      useEditorStore.getState().scenes[0]!.blocks[0]!.id,
-      "第一段保留正文",
-    );
+    useEditorStore
+      .getState()
+      .updateBlockContent(
+        firstScene.id,
+        useEditorStore.getState().scenes[0]!.blocks[0]!.id,
+        "第一段保留正文",
+      );
 
     useProjectStore.getState().updateScene(firstScene.id, {
       title: "第一章：回到旧校舍",
@@ -516,17 +523,19 @@ describe("store persistence", () => {
     await setFakeProjectRepository(fake.repository);
     await setFakeStoryRepository(fakeStory.repository);
 
-    const { useProjectStore: reloadedProjectStore } = await import(
-      "../../features/projects/store/useProjectStore"
-    );
+    const { useProjectStore: reloadedProjectStore } =
+      await import("../../features/projects/store/useProjectStore");
     await reloadedProjectStore.getState().hydrateLatestProject();
-    const { useEditorStore: reloadedEditorStore } = await import(
-      "../../features/editor/store/useEditorStore"
-    );
+    const { useEditorStore: reloadedEditorStore } =
+      await import("../../features/editor/store/useEditorStore");
     await reloadedEditorStore.getState().hydrateScenes(project.id);
 
-    expect(reloadedProjectStore.getState().currentProject?.scenes).toHaveLength(1);
-    expect(reloadedProjectStore.getState().currentProject?.scenes[0]).toMatchObject({
+    expect(reloadedProjectStore.getState().currentProject?.scenes).toHaveLength(
+      1,
+    );
+    expect(
+      reloadedProjectStore.getState().currentProject?.scenes[0],
+    ).toMatchObject({
       id: firstScene.id,
       title: "第一章：回到旧校舍",
       summary: "雨声落在废弃走廊里。",
@@ -537,9 +546,9 @@ describe("store persistence", () => {
     expect(reloadedEditorStore.getState().scenes).toHaveLength(1);
     expect(reloadedEditorStore.getState().selectedSceneId).toBe(firstScene.id);
     expect(reloadedEditorStore.getState().scenes[0]?.blocks).toHaveLength(1);
-    expect(reloadedEditorStore.getState().scenes[0]?.blocks[0]?.contentText).toBe(
-      "第一段保留正文",
-    );
+    expect(
+      reloadedEditorStore.getState().scenes[0]?.blocks[0]?.contentText,
+    ).toBe("第一段保留正文");
   });
 
   it("鍒犻櫎鍦烘櫙鍚庝細娓呯┖ choice 鎽囧紑鐩爣鍦烘櫙", async () => {
@@ -548,7 +557,9 @@ describe("store persistence", () => {
       import("../../features/editor/store/useEditorStore"),
     ]);
 
-    useProjectStore.getState().createProject("闆ㄥ鍥炲搷", "涓€娈垫牎鍥偓鐤戞晠浜?");
+    useProjectStore
+      .getState()
+      .createProject("闆ㄥ鍥炲搷", "涓€娈垫牎鍥偓鐤戞晠浜?");
     const project = useProjectStore.getState().currentProject!;
     const routeId = project.routes[0]!.id;
     const firstScene = useProjectStore.getState().createSceneInRoute(routeId)!;
@@ -561,23 +572,29 @@ describe("store persistence", () => {
 
     useEditorStore.getState().selectScene(firstScene.id);
     useEditorStore.getState().addBlock("choice");
-    const firstChoiceBlockId = useEditorStore.getState().scenes[0]?.blocks[0]?.id ?? "";
-    useEditorStore.getState().updateChoiceBlock(firstScene.id, firstChoiceBlockId, {
-      label: "前往终点场景",
-      targetSceneId: secondScene.id,
-      effectVariableId: null,
-      effectValue: 0,
-    });
+    const firstChoiceBlockId =
+      useEditorStore.getState().scenes[0]?.blocks[0]?.id ?? "";
+    useEditorStore
+      .getState()
+      .updateChoiceBlock(firstScene.id, firstChoiceBlockId, {
+        label: "前往终点场景",
+        targetSceneId: secondScene.id,
+        effectVariableId: null,
+        effectValue: 0,
+      });
 
     useEditorStore.getState().selectScene(thirdScene.id);
     useEditorStore.getState().addBlock("choice");
-    const secondChoiceBlockId = useEditorStore.getState().scenes[2]?.blocks[0]?.id ?? "";
-    useEditorStore.getState().updateChoiceBlock(thirdScene.id, secondChoiceBlockId, {
-      label: "前往终点场景",
-      targetSceneId: secondScene.id,
-      effectVariableId: null,
-      effectValue: 0,
-    });
+    const secondChoiceBlockId =
+      useEditorStore.getState().scenes[2]?.blocks[0]?.id ?? "";
+    useEditorStore
+      .getState()
+      .updateChoiceBlock(thirdScene.id, secondChoiceBlockId, {
+        label: "前往终点场景",
+        targetSceneId: secondScene.id,
+        effectVariableId: null,
+        effectValue: 0,
+      });
 
     useProjectStore.getState().deleteScene(secondScene.id);
 

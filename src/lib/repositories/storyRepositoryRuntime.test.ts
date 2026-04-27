@@ -59,7 +59,9 @@ function createFakeStoryRepository(): StoryRepository {
 
   return {
     async listScenes(projectId) {
-      return [...scenes.values()].filter((scene) => scene.projectId === projectId);
+      return [...scenes.values()].filter(
+        (scene) => scene.projectId === projectId,
+      );
     },
     async createScene(input) {
       const scene = createScene({
@@ -116,7 +118,8 @@ function setTauriInternals(value: unknown) {
 
 function clearTauriInternals() {
   if ("__TAURI_INTERNALS__" in window) {
-    delete (window as Window & { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__;
+    delete (window as Window & { __TAURI_INTERNALS__?: unknown })
+      .__TAURI_INTERNALS__;
   }
 }
 
@@ -176,7 +179,9 @@ describe("storyRepositoryRuntime", () => {
       scene,
     });
 
-    await expect(repository.listScenes(scene.projectId)).resolves.toEqual([scene]);
+    await expect(repository.listScenes(scene.projectId)).resolves.toEqual([
+      scene,
+    ]);
   });
 
   it("volatile repository 支持按项目保存和恢复 links", async () => {

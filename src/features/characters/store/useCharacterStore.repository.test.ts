@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Character } from "../../../lib/domain/character";
-import { useAutoSaveStore } from "../../../lib/store/useAutoSaveStore";
+import type { Character } from "@/lib/domain/character";
+import { useAutoSaveStore } from "@/lib/store/useAutoSaveStore";
 import {
   resetReferenceRepositoryForTesting,
   setReferenceRepositoryForTesting,
-} from "../../../lib/repositories/referenceRepositoryRuntime";
+} from "@/lib/repositories/referenceRepositoryRuntime";
 import { useCharacterStore } from "./useCharacterStore";
 
 function createCharacter(overrides: Partial<Character> = {}): Character {
@@ -28,7 +28,9 @@ function createFakeReferenceRepository(initialCharacters: Character[] = []) {
     initialCharacters.map((character) => [character.id, character]),
   );
   const listCharacters = vi.fn(async (projectId: string) =>
-    [...characters.values()].filter((character) => character.projectId === projectId),
+    [...characters.values()].filter(
+      (character) => character.projectId === projectId,
+    ),
   );
   const saveCharacter = vi.fn(async (character: Character) => {
     characters.set(character.id, character);

@@ -18,7 +18,10 @@ export function AppShell() {
   return (
     <div className="app-shell">
       <aside className="app-shell__sidebar">
-        <div className="app-shell__brand">VN Writer Lab</div>
+        <div className="app-shell__brand">
+          <span className="app-shell__brand-mark">VN Writer Lab</span>
+          <span className="app-shell__brand-subtitle">Narrative Studio</span>
+        </div>
         <nav aria-label="主导航" className="app-shell__nav">
           {navigationItems.map((item) => (
             <NavLink
@@ -26,7 +29,9 @@ export function AppShell() {
               to={item.to}
               end={item.end ?? false}
               className={({ isActive }) =>
-                isActive ? "app-shell__nav-link is-active" : "app-shell__nav-link"
+                isActive
+                  ? "app-shell__nav-link is-active"
+                  : "app-shell__nav-link"
               }
             >
               {item.label}
@@ -35,7 +40,9 @@ export function AppShell() {
         </nav>
       </aside>
       <main className="app-shell__content">
-        <Outlet />
+        <div className="app-shell__content-inner">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

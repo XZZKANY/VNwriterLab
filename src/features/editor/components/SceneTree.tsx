@@ -1,8 +1,13 @@
 import { useState } from "react";
-import type { Route } from "../../../lib/domain/project";
-import type { Scene } from "../../../lib/domain/scene";
-import { useProjectStore } from "../../projects/store/useProjectStore";
+import type { Route } from "@/lib/domain/project";
+import type { Scene } from "@/lib/domain/scene";
+import { useProjectStore } from "@/features/projects/store/useProjectStore";
+import {
+  buildRouteGroups,
+  sortByRouteAndSceneOrder,
+} from "../lib/sceneTreeUtils";
 import { useEditorStore } from "../store/useEditorStore";
+import { SceneTreeRow } from "./SceneTreeRow";
 
 interface SceneTreeProps {
   routes?: Route[];
@@ -10,29 +15,6 @@ interface SceneTreeProps {
   selectedSceneId: string | null;
   onCreateScene: (routeId?: string) => void;
   onSelectScene: (sceneId: string) => void;
-}
-
-function sortByRouteAndSceneOrder(left: Scene, right: Scene) {
-  if (left.routeId !== right.routeId) {
-    return left.routeId.localeCompare(right.routeId);
-  }
-
-  if (left.sortOrder !== right.sortOrder) {
-    return left.sortOrder - right.sortOrder;
-  }
-
-  return left.id.localeCompare(right.id);
-}
-
-function buildRouteGroups(routes: Route[], scenes: Scene[]) {
-  return [...routes]
-    .sort((left, right) => left.sortOrder - right.sortOrder)
-    .map((route) => ({
-      route,
-      scenes: scenes
-        .filter((scene) => scene.routeId === route.id)
-        .sort((left, right) => left.sortOrder - right.sortOrder),
-    }));
 }
 
 export function SceneTree({
@@ -49,6 +31,29 @@ export function SceneTree({
   const moveSceneToRoute = useProjectStore((state) => state.moveSceneToRoute);
   const deleteProjectScene = useProjectStore((state) => state.deleteScene);
   const deleteLocalScene = useEditorStore((state) => state.deleteScene);
+
+  function handleDeleteScene(sceneId: string) {
+    if (currentProject) {
+      deleteProjectScene(sceneId);
+      return;
+    }
+    deleteLocalScene(sceneId);
+  }
+
+  function handleMoveTargetChange(sceneId: string, targetRouteId: string) {
+    setMoveTargets((currentTargets) => ({
+      ...currentTargets,
+      [sceneId]: targetRouteId,
+    }));
+  }
+
+  function handleMoveToRoute(sceneId: string, targetRouteId: string) {
+    moveSceneToRoute(sceneId, targetRouteId);
+    setMoveTargets((currentTargets) => ({
+      ...currentTargets,
+      [sceneId]: targetRouteId,
+    }));
+  }
 
   const routeGroups = buildRouteGroups(routes, scenes);
 
@@ -68,14 +73,7 @@ export function SceneTree({
               >
                 {scene.title}
               </button>
-              <button
-                type="button"
-                onClick={() =>
-                  currentProject
-                    ? deleteProjectScene(scene.id)
-                    : deleteLocalScene(scene.id)
-                }
-              >
+              <button type="button" onClick={() => handleDeleteScene(scene.id)}>
                 删除场景
               </button>
             </li>
@@ -97,85 +95,23 @@ export function SceneTree({
               </button>
             </div>
             <ul>
-              {routeScenes.map((scene, index) => {
-                const targetRouteId = moveTargets[scene.id] ?? scene.routeId;
-                const canMoveUp = index > 0;
-                const canMoveDown = index < routeScenes.length - 1;
-
-                return (
-                  <li key={scene.id}>
-                    <button
-                      type="button"
-                      aria-pressed={scene.id === selectedSceneId}
-                      onClick={() => onSelectScene(scene.id)}
-                    >
-                      {scene.title}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => moveSceneUp(scene.id)}
-                      disabled={!canMoveUp}
-                    >
-                      上移
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => moveSceneDown(scene.id)}
-                      disabled={!canMoveDown}
-                    >
-                      下移
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        currentProject
-                          ? deleteProjectScene(scene.id)
-                          : deleteLocalScene(scene.id)
-                      }
-                    >
-                      删除场景
-                    </button>
-                    {routes.length > 1 ? (
-                      <>
-                        <label>
-                          移动到路线
-                          <select
-                            aria-label="移动到路线"
-                            value={targetRouteId}
-                            onChange={(event) =>
-                              setMoveTargets((currentTargets) => ({
-                                ...currentTargets,
-                                [scene.id]: event.target.value,
-                              }))
-                            }
-                          >
-                            {routes.map((candidateRoute) => (
-                              <option
-                                key={candidateRoute.id}
-                                value={candidateRoute.id}
-                              >
-                                {candidateRoute.name}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            moveSceneToRoute(scene.id, targetRouteId);
-                            setMoveTargets((currentTargets) => ({
-                              ...currentTargets,
-                              [scene.id]: targetRouteId,
-                            }));
-                          }}
-                        >
-                          移动场景
-                        </button>
-                      </>
-                    ) : null}
-                  </li>
-                );
-              })}
+              {routeScenes.map((scene, index) => (
+                <SceneTreeRow
+                  key={scene.id}
+                  scene={scene}
+                  isSelected={scene.id === selectedSceneId}
+                  canMoveUp={index > 0}
+                  canMoveDown={index < routeScenes.length - 1}
+                  routes={routes}
+                  targetRouteId={moveTargets[scene.id] ?? scene.routeId}
+                  onSelectScene={onSelectScene}
+                  onMoveSceneUp={moveSceneUp}
+                  onMoveSceneDown={moveSceneDown}
+                  onDeleteScene={handleDeleteScene}
+                  onMoveTargetChange={handleMoveTargetChange}
+                  onMoveToRoute={handleMoveToRoute}
+                />
+              ))}
             </ul>
           </li>
         ))}

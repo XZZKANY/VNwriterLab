@@ -1,7 +1,7 @@
-import type { Character } from "../../../lib/domain/character";
-import type { LoreEntry } from "../../../lib/domain/lore";
-import type { Project } from "../../../lib/domain/project";
-import type { Scene } from "../../../lib/domain/scene";
+import type { Character } from "@/lib/domain/character";
+import type { LoreEntry } from "@/lib/domain/lore";
+import type { Project } from "@/lib/domain/project";
+import type { Scene } from "@/lib/domain/scene";
 
 export interface ProjectSearchSceneResult {
   sceneId: string;
@@ -58,7 +58,9 @@ export function searchProjectContent(
     };
   }
 
-  const projectSceneIds = new Set(input.project.scenes.map((scene) => scene.id));
+  const projectSceneIds = new Set(
+    input.project.scenes.map((scene) => scene.id),
+  );
   const editorSceneMap = new Map(
     input.editorScenes
       .filter(
@@ -93,7 +95,10 @@ export function searchProjectContent(
       }
 
       scene.blocks.forEach((block, index) => {
-        if (block.contentText && includesKeyword(block.contentText, normalizedKeyword)) {
+        if (
+          block.contentText &&
+          includesKeyword(block.contentText, normalizedKeyword)
+        ) {
           matchedFields.push(`正文块 ${index + 1}`);
           snippets.push(block.contentText);
         }
@@ -121,7 +126,9 @@ export function searchProjectContent(
         ["秘密", character.secret],
       ] as const;
       const matchedFields = candidateFields
-        .filter(([, value]) => value && includesKeyword(value, normalizedKeyword))
+        .filter(
+          ([, value]) => value && includesKeyword(value, normalizedKeyword),
+        )
         .map(([field]) => field);
       const snippet =
         candidateFields.find(
@@ -149,7 +156,9 @@ export function searchProjectContent(
         ["标签", tagsText],
       ] as const;
       const matchedFields = candidateFields
-        .filter(([, value]) => value && includesKeyword(value, normalizedKeyword))
+        .filter(
+          ([, value]) => value && includesKeyword(value, normalizedKeyword),
+        )
         .map(([field]) => field);
       const snippet =
         candidateFields.find(

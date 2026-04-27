@@ -1,40 +1,57 @@
 import { useEffect } from "react";
-import { AutoSaveStatus } from "../../../app/components/AutoSaveStatus";
-import { useProjectStore } from "../../projects/store/useProjectStore";
+import { useShallow } from "zustand/react/shallow";
+import { AutoSaveStatus } from "@/app/components/AutoSaveStatus";
+import { useProjectStore } from "@/features/projects/store/useProjectStore";
+import { BlockToolbar } from "../components/BlockToolbar";
 import { SceneBlockList } from "../components/SceneBlockList";
+import { SceneMetadataForm } from "../components/SceneMetadataForm";
 import { SceneTree } from "../components/SceneTree";
+import { VariablePanel } from "../components/VariablePanel";
+import type { EditorSceneUpdateInput } from "../store/editorStore.types";
 import { useEditorStore } from "../store/useEditorStore";
 
 export function EditorPage() {
-  const scenes = useEditorStore((state) => state.scenes);
-  const selectedSceneId = useEditorStore((state) => state.selectedSceneId);
-  const variables = useEditorStore((state) => state.variables);
-  const selectedVariableId = useEditorStore((state) => state.selectedVariableId);
-  const createScene = useEditorStore((state) => state.createScene);
-  const importScene = useEditorStore((state) => state.importScene);
-  const selectScene = useEditorStore((state) => state.selectScene);
-  const createVariable = useEditorStore((state) => state.createVariable);
-  const hydrateScenes = useEditorStore((state) => state.hydrateScenes);
-  const hydrateVariables = useEditorStore((state) => state.hydrateVariables);
-  const selectVariable = useEditorStore((state) => state.selectVariable);
-  const deleteVariable = useEditorStore((state) => state.deleteVariable);
-  const updateVariable = useEditorStore((state) => state.updateVariable);
-  const addBlock = useEditorStore((state) => state.addBlock);
-  const deleteBlock = useEditorStore((state) => state.deleteBlock);
-  const moveBlockUp = useEditorStore((state) => state.moveBlockUp);
-  const moveBlockDown = useEditorStore((state) => state.moveBlockDown);
-  const updateBlockContent = useEditorStore((state) => state.updateBlockContent);
-  const updateChoiceBlock = useEditorStore((state) => state.updateChoiceBlock);
-  const updateConditionBlock = useEditorStore(
-    (state) => state.updateConditionBlock,
+  const { scenes, selectedSceneId, variables, selectedVariableId } =
+    useEditorStore(
+      useShallow((state) => ({
+        scenes: state.scenes,
+        selectedSceneId: state.selectedSceneId,
+        variables: state.variables,
+        selectedVariableId: state.selectedVariableId,
+      })),
+    );
+
+  const editorActions = useEditorStore(
+    useShallow((state) => ({
+      createScene: state.createScene,
+      importScene: state.importScene,
+      selectScene: state.selectScene,
+      updateLocalScene: state.updateScene,
+      hydrateScenes: state.hydrateScenes,
+      hydrateVariables: state.hydrateVariables,
+      createVariable: state.createVariable,
+      selectVariable: state.selectVariable,
+      deleteVariable: state.deleteVariable,
+      updateVariable: state.updateVariable,
+      addBlock: state.addBlock,
+      deleteBlock: state.deleteBlock,
+      moveBlockUp: state.moveBlockUp,
+      moveBlockDown: state.moveBlockDown,
+      updateBlockContent: state.updateBlockContent,
+      updateChoiceBlock: state.updateChoiceBlock,
+      updateConditionBlock: state.updateConditionBlock,
+      updateNoteBlock: state.updateNoteBlock,
+    })),
   );
-  const updateNoteBlock = useEditorStore((state) => state.updateNoteBlock);
-  const updateLocalScene = useEditorStore((state) => state.updateScene);
-  const currentProject = useProjectStore((state) => state.currentProject);
-  const createProjectSceneInRoute = useProjectStore(
-    (state) => state.createSceneInRoute,
-  );
-  const updateProjectScene = useProjectStore((state) => state.updateScene);
+
+  const { currentProject, createProjectSceneInRoute, updateProjectScene } =
+    useProjectStore(
+      useShallow((state) => ({
+        currentProject: state.currentProject,
+        createProjectSceneInRoute: state.createSceneInRoute,
+        updateProjectScene: state.updateScene,
+      })),
+    );
 
   const visibleScenes = currentProject
     ? scenes.filter((scene) => scene.projectId === currentProject.id)
@@ -51,39 +68,34 @@ export function EditorPage() {
 
   useEffect(() => {
     if (currentProject && projectVariables.length === 0) {
-      void hydrateVariables(currentProject.id);
+      void editorActions.hydrateVariables(currentProject.id);
     }
-  }, [currentProject, projectVariables.length, hydrateVariables]);
+  }, [currentProject, projectVariables.length, editorActions]);
 
   useEffect(() => {
     if (currentProject && visibleScenes.length === 0) {
-      void hydrateScenes(currentProject.id);
+      void editorActions.hydrateScenes(currentProject.id);
     }
-  }, [currentProject, visibleScenes.length, hydrateScenes]);
+  }, [currentProject, visibleScenes.length, editorActions]);
 
-  function handleSceneUpdate(
-    sceneId: string,
-    input: Parameters<typeof updateProjectScene>[1],
-  ) {
+  function handleSceneUpdate(sceneId: string, input: EditorSceneUpdateInput) {
     if (currentProject) {
       updateProjectScene(sceneId, input);
-      updateLocalScene(sceneId, input);
-      return;
     }
 
-    updateLocalScene(sceneId, input);
+    editorActions.updateLocalScene(sceneId, input);
   }
 
   function handleCreateScene(routeId?: string) {
     if (currentProject && routeId) {
       const nextScene = createProjectSceneInRoute(routeId);
       if (nextScene) {
-        importScene(nextScene);
+        editorActions.importScene(nextScene);
         return;
       }
     }
 
-    createScene({
+    editorActions.createScene({
       projectId: currentProject?.id,
       routeId,
     });
@@ -93,251 +105,48 @@ export function EditorPage() {
     <section>
       <h2>剧情编辑</h2>
       <AutoSaveStatus />
-      <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 16 }}>
+      <div className="layout-split layout-split--default">
         <SceneTree
           routes={currentProject?.routes}
           scenes={visibleScenes}
           selectedSceneId={selectedSceneId}
           onCreateScene={handleCreateScene}
-          onSelectScene={selectScene}
+          onSelectScene={editorActions.selectScene}
         />
         <div>
           {currentProject ? (
-            <div
-              style={{
-                marginBottom: 16,
-                display: "grid",
-                gridTemplateColumns: "220px 1fr",
-                gap: 16,
-              }}
-            >
-              <aside>
-                <h3>变量</h3>
-                <button
-                  type="button"
-                  onClick={() => {
-                    createVariable(currentProject.id);
-                  }}
-                >
-                  新增变量
-                </button>
-                <ul>
-                  {projectVariables.map((variable) => (
-                    <li key={variable.id}>
-                      <button
-                        type="button"
-                        aria-pressed={variable.id === selectedVariable?.id}
-                        onClick={() => selectVariable(variable.id)}
-                      >
-                        {variable.name}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </aside>
-              <article>
-                <h3>变量详情</h3>
-                {selectedVariable ? (
-                  <>
-                    <label>
-                      变量名称
-                      <input
-                        aria-label="变量名称"
-                        value={selectedVariable.name}
-                        onChange={(event) =>
-                          updateVariable(selectedVariable.id, {
-                            name: event.target.value,
-                          })
-                        }
-                      />
-                    </label>
-                    <label>
-                      变量类型
-                      <select
-                        aria-label="变量类型"
-                        value={selectedVariable.variableType}
-                        onChange={(event) =>
-                          updateVariable(selectedVariable.id, {
-                            variableType:
-                              event.target.value === "number"
-                                ? "number"
-                                : "flag",
-                          })
-                        }
-                      >
-                        <option value="flag">标记</option>
-                        <option value="number">数值</option>
-                      </select>
-                    </label>
-                    {selectedVariable.variableType === "flag" ? (
-                      <label>
-                        默认值
-                        <select
-                          aria-label="默认值"
-                          value={String(selectedVariable.defaultValue)}
-                          onChange={(event) =>
-                            updateVariable(selectedVariable.id, {
-                              defaultValue: Number(event.target.value) || 0,
-                            })
-                          }
-                        >
-                          <option value="0">关闭</option>
-                          <option value="1">开启</option>
-                        </select>
-                      </label>
-                    ) : (
-                      <label>
-                        默认值
-                        <input
-                          aria-label="默认值"
-                          type="number"
-                          value={selectedVariable.defaultValue}
-                          onChange={(event) =>
-                            updateVariable(selectedVariable.id, {
-                              defaultValue: Number(event.target.value) || 0,
-                            })
-                          }
-                          />
-                      </label>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => deleteVariable(selectedVariable.id)}
-                    >
-                      删除变量
-                    </button>
-                  </>
-                ) : (
-                  <p>点击“新增变量”开始配置基础标记。</p>
-                )}
-              </article>
-            </div>
+            <VariablePanel
+              projectId={currentProject.id}
+              variables={projectVariables}
+              selectedVariable={selectedVariable}
+              onCreateVariable={() =>
+                editorActions.createVariable(currentProject.id)
+              }
+              onSelectVariable={editorActions.selectVariable}
+              onUpdateVariable={editorActions.updateVariable}
+              onDeleteVariable={editorActions.deleteVariable}
+            />
           ) : null}
           {selectedScene ? (
-            <article style={{ marginBottom: 16 }}>
-              <h3>场景基础信息</h3>
-              <label>
-                标题
-                <input
-                  aria-label="场景标题"
-                  value={selectedScene.title}
-                  onChange={(event) =>
-                    handleSceneUpdate(selectedScene.id, {
-                      title: event.target.value,
-                    })
-                  }
-                />
-              </label>
-              <label>
-                摘要
-                <textarea
-                  aria-label="场景摘要"
-                  value={selectedScene.summary}
-                  onChange={(event) =>
-                    handleSceneUpdate(selectedScene.id, {
-                      summary: event.target.value,
-                    })
-                  }
-                />
-              </label>
-              <label>
-                场景类型
-                <select
-                  aria-label="场景类型"
-                  value={selectedScene.sceneType}
-                  onChange={(event) =>
-                    handleSceneUpdate(selectedScene.id, {
-                      sceneType: event.target.value as
-                        | "normal"
-                        | "branch"
-                        | "ending",
-                    })
-                  }
-                >
-                  <option value="normal">普通</option>
-                  <option value="branch">分支</option>
-                  <option value="ending">结局</option>
-                </select>
-              </label>
-              <label>
-                状态
-                <select
-                  aria-label="场景状态"
-                  value={selectedScene.status}
-                  onChange={(event) =>
-                    handleSceneUpdate(selectedScene.id, {
-                      status: event.target.value as
-                        | "draft"
-                        | "completed"
-                        | "needs_revision"
-                        | "needs_supplement"
-                        | "needs_logic_check",
-                    })
-                  }
-                >
-                  <option value="draft">草稿</option>
-                  <option value="completed">已完成</option>
-                  <option value="needs_revision">需修改</option>
-                  <option value="needs_supplement">待补充</option>
-                  <option value="needs_logic_check">待检查逻辑</option>
-                </select>
-              </label>
-              <label>
-                <input
-                  aria-label="是否起始场景"
-                  type="checkbox"
-                  checked={selectedScene.isStartScene}
-                  onChange={(event) =>
-                    handleSceneUpdate(selectedScene.id, {
-                      isStartScene: event.target.checked,
-                    })
-                  }
-                />
-                是否起始场景
-              </label>
-              <label>
-                <input
-                  aria-label="是否结局场景"
-                  type="checkbox"
-                  checked={selectedScene.isEndingScene}
-                  onChange={(event) =>
-                    handleSceneUpdate(selectedScene.id, {
-                      isEndingScene: event.target.checked,
-                    })
-                  }
-                />
-                是否结局场景
-              </label>
-            </article>
+            <SceneMetadataForm
+              scene={selectedScene}
+              onUpdate={(input) => handleSceneUpdate(selectedScene.id, input)}
+            />
           ) : null}
-          <button type="button" onClick={() => addBlock("narration")}>
-            新增旁白
-          </button>
-          <button type="button" onClick={() => addBlock("dialogue")}>
-            新增对白
-          </button>
-          <button type="button" onClick={() => addBlock("note")}>
-            新增注释
-          </button>
-          <button type="button" onClick={() => addBlock("choice")}>
-            新增选项
-          </button>
-          <button type="button" onClick={() => addBlock("condition")}>
-            新增条件
-          </button>
+          <BlockToolbar onAddBlock={editorActions.addBlock} />
           {selectedScene ? (
             <SceneBlockList
               sceneId={selectedScene.id}
               blocks={selectedScene.blocks}
               scenes={visibleScenes}
               variables={projectVariables}
-              onDeleteBlock={deleteBlock}
-              onMoveBlockUp={moveBlockUp}
-              onMoveBlockDown={moveBlockDown}
-              onUpdateBlockContent={updateBlockContent}
-              onUpdateChoiceBlock={updateChoiceBlock}
-              onUpdateConditionBlock={updateConditionBlock}
-              onUpdateNoteBlock={updateNoteBlock}
+              onDeleteBlock={editorActions.deleteBlock}
+              onMoveBlockUp={editorActions.moveBlockUp}
+              onMoveBlockDown={editorActions.moveBlockDown}
+              onUpdateBlockContent={editorActions.updateBlockContent}
+              onUpdateChoiceBlock={editorActions.updateChoiceBlock}
+              onUpdateConditionBlock={editorActions.updateConditionBlock}
+              onUpdateNoteBlock={editorActions.updateNoteBlock}
             />
           ) : (
             <p>请选择或创建一个场景。</p>

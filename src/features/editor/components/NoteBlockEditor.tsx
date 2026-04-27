@@ -1,7 +1,4 @@
-import {
-  type NoteBlockMeta,
-  type NoteBlockType,
-} from "../store/noteBlock";
+import { type NoteBlockMeta, type NoteBlockType } from "../store/noteBlock";
 
 interface NoteBlockEditorProps {
   note: NoteBlockMeta;

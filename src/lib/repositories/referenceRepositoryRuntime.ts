@@ -23,7 +23,9 @@ function createVolatileReferenceRepository(): ReferenceRepository {
   return {
     async listCharacters(projectId) {
       return sortByNameAndId(
-        [...characters.values()].filter((character) => character.projectId === projectId),
+        [...characters.values()].filter(
+          (character) => character.projectId === projectId,
+        ),
       );
     },
     async saveCharacter(character) {
@@ -31,7 +33,9 @@ function createVolatileReferenceRepository(): ReferenceRepository {
     },
     async listLoreEntries(projectId) {
       return sortByNameAndId(
-        [...loreEntries.values()].filter((entry) => entry.projectId === projectId),
+        [...loreEntries.values()].filter(
+          (entry) => entry.projectId === projectId,
+        ),
       );
     },
     async saveLoreEntry(entry) {
@@ -39,7 +43,9 @@ function createVolatileReferenceRepository(): ReferenceRepository {
     },
     async listVariables(projectId) {
       return sortByNameAndId(
-        [...variables.values()].filter((variable) => variable.projectId === projectId),
+        [...variables.values()].filter(
+          (variable) => variable.projectId === projectId,
+        ),
       );
     },
     async saveVariable(variable) {
@@ -80,7 +86,9 @@ export function getReferenceRepository() {
   return referenceRepositorySingleton;
 }
 
-export function setReferenceRepositoryForTesting(repository: ReferenceRepository) {
+export function setReferenceRepositoryForTesting(
+  repository: ReferenceRepository,
+) {
   referenceRepositoryOverride = repository;
 }
 

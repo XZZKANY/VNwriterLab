@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { useEditorStore } from "../../editor/store/useEditorStore";
-import { useProjectStore } from "../../projects/store/useProjectStore";
+import { useEditorStore } from "@/features/editor/store/useEditorStore";
+import { useProjectStore } from "@/features/projects/store/useProjectStore";
 import { buildOutlineView } from "../lib/outlineView";
 
 export function ViewsPage() {
@@ -22,8 +22,14 @@ export function ViewsPage() {
   const projectScenes = scenes.filter(
     (scene) => scene.projectId === currentProject.id,
   );
-  const projectLinks = links.filter((link) => link.projectId === currentProject.id);
-  const sections = buildOutlineView(currentProject.routes, projectScenes, projectLinks);
+  const projectLinks = links.filter(
+    (link) => link.projectId === currentProject.id,
+  );
+  const sections = buildOutlineView(
+    currentProject.routes,
+    projectScenes,
+    projectLinks,
+  );
 
   return (
     <section>
@@ -41,7 +47,8 @@ export function ViewsPage() {
                       <strong>{scene.title}</strong>
                       <span>
                         {" "}
-                        （入边 {scene.incomingCount} / 出边 {scene.outgoingCount}）
+                        （入边 {scene.incomingCount} / 出边{" "}
+                        {scene.outgoingCount}）
                       </span>
                       {scene.isStartScene ? <span> [起始]</span> : null}
                       {scene.isEndingScene ? <span> [结局]</span> : null}

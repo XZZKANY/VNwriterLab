@@ -1,7 +1,7 @@
 import { useState } from "react";
-import type { Scene } from "../../../lib/domain/scene";
-import { parseChoiceBlockMeta } from "../../editor/store/choiceBlock";
-import { useEditorStore } from "../../editor/store/useEditorStore";
+import type { Scene } from "@/lib/domain/scene";
+import { parseChoiceBlockMeta } from "@/features/editor/store/choiceBlock";
+import { useEditorStore } from "@/features/editor/store/useEditorStore";
 import {
   applyChoiceEffect,
   canEnterScene,
@@ -39,8 +39,7 @@ export function PreviewPage() {
     nextRuntimeVariables: typeof runtimeVariables,
     fallbackSceneId: string | null,
   ) {
-    const nextScene =
-      scenes.find((scene) => scene.id === nextSceneId) ?? null;
+    const nextScene = scenes.find((scene) => scene.id === nextSceneId) ?? null;
 
     if (!nextScene) {
       setEntryBlockedMessage(null);

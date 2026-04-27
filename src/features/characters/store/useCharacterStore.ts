@@ -1,10 +1,7 @@
 import { create } from "zustand";
-import {
-  createEmptyCharacter,
-  type Character,
-} from "../../../lib/domain/character";
-import { getReferenceRepository } from "../../../lib/repositories/referenceRepositoryRuntime";
-import { useAutoSaveStore } from "../../../lib/store/useAutoSaveStore";
+import { createEmptyCharacter, type Character } from "@/lib/domain/character";
+import { getReferenceRepository } from "@/lib/repositories/referenceRepositoryRuntime";
+import { useAutoSaveStore } from "@/lib/store/useAutoSaveStore";
 
 interface CharacterState {
   characters: Character[];
@@ -50,9 +47,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const currentSelectedCharacterId = get().selectedCharacterId;
     const nextSelectedCharacterId =
       currentSelectedCharacterId &&
-      characters.some((character) => character.id === currentSelectedCharacterId)
+      characters.some(
+        (character) => character.id === currentSelectedCharacterId,
+      )
         ? currentSelectedCharacterId
-        : characters[0]?.id ?? null;
+        : (characters[0]?.id ?? null);
 
     set({
       characters,

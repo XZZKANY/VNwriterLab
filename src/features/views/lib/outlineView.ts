@@ -1,6 +1,6 @@
-import type { Route } from "../../../lib/domain/project";
-import type { Scene } from "../../../lib/domain/scene";
-import type { SceneLink } from "../../editor/store/linkUtils";
+import type { Route } from "@/lib/domain/project";
+import type { Scene } from "@/lib/domain/scene";
+import type { SceneLink } from "@/features/editor/store/linkUtils";
 
 export interface OutlineSceneItem {
   sceneId: string;
@@ -37,8 +37,10 @@ export function buildOutlineView(
           sortOrder: scene.sortOrder,
           isStartScene: scene.isStartScene,
           isEndingScene: scene.isEndingScene,
-          incomingCount: links.filter((link) => link.toSceneId === scene.id).length,
-          outgoingCount: links.filter((link) => link.fromSceneId === scene.id).length,
+          incomingCount: links.filter((link) => link.toSceneId === scene.id)
+            .length,
+          outgoingCount: links.filter((link) => link.fromSceneId === scene.id)
+            .length,
         })),
     }));
 }

@@ -1,83 +1,9 @@
 import { useEffect } from "react";
-import { useProjectStore } from "../../projects/store/useProjectStore";
+import { useProjectStore } from "@/features/projects/store/useProjectStore";
+import { LoreDetailForm } from "../components/LoreDetailForm";
+import { LoreSceneAssociationList } from "../components/LoreSceneAssociationList";
+import { resolveLoreSceneAssociations } from "../lib/loreSceneAssociations";
 import { useLoreStore } from "../store/useLoreStore";
-import type { LoreEntry } from "../../../lib/domain/lore";
-import type { Scene } from "../../../lib/domain/scene";
-
-interface SceneAssociation {
-  sceneId: string;
-  sceneTitle: string;
-  matchedFields: string[];
-  snippet: string;
-}
-
-function normalizeKeyword(value: string) {
-  return value.trim().toLowerCase();
-}
-
-function collectLoreKeywords(entry: LoreEntry) {
-  return [entry.name, ...entry.tags]
-    .map(normalizeKeyword)
-    .filter((keyword) => keyword.length > 0);
-}
-
-function resolveLoreSceneAssociations(
-  entry: LoreEntry,
-  scenes: Scene[],
-): SceneAssociation[] {
-  const keywords = collectLoreKeywords(entry);
-  if (keywords.length === 0) {
-    return [];
-  }
-
-  return scenes.flatMap((scene) => {
-    const matchedFields: string[] = [];
-    const snippets: string[] = [];
-
-    const title = scene.title.trim();
-    if (
-      title.length > 0 &&
-      keywords.some((keyword) => normalizeKeyword(title).includes(keyword))
-    ) {
-      matchedFields.push("标题");
-      snippets.push(title);
-    }
-
-    const summary = scene.summary.trim();
-    if (
-      summary.length > 0 &&
-      keywords.some((keyword) => normalizeKeyword(summary).includes(keyword))
-    ) {
-      matchedFields.push("简介");
-      snippets.push(summary);
-    }
-
-    scene.blocks.forEach((block, index) => {
-      const content = block.contentText.trim();
-      if (
-        content.length > 0 &&
-        keywords.some((keyword) => normalizeKeyword(content).includes(keyword))
-      ) {
-        matchedFields.push(`正文块 ${index + 1}`);
-        snippets.push(content);
-      }
-    });
-
-    const uniqueMatchedFields = [...new Set(matchedFields)];
-    if (uniqueMatchedFields.length === 0) {
-      return [];
-    }
-
-    return [
-      {
-        sceneId: scene.id,
-        sceneTitle: title || "未命名场景",
-        matchedFields: uniqueMatchedFields,
-        snippet: snippets[0] ?? "",
-      },
-    ];
-  });
-}
 
 export function LorePage() {
   const currentProject = useProjectStore((state) => state.currentProject);
@@ -122,7 +48,7 @@ export function LorePage() {
       {!currentProject ? (
         <p>请先创建项目，再开始整理设定资料。</p>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "220px 1fr", gap: 16 }}>
+        <div className="layout-split layout-split--narrow">
           <aside>
             <h3>设定列表</h3>
             <ul>
@@ -143,61 +69,11 @@ export function LorePage() {
             <h3>设定详情</h3>
             {selectedEntry ? (
               <>
-                <label>
-                  名称
-                  <input
-                    value={selectedEntry.name}
-                    onChange={(event) =>
-                      updateLoreEntry(selectedEntry.id, {
-                        name: event.target.value,
-                      })
-                    }
-                  />
-                </label>
-                <label>
-                  分类
-                  <select
-                    aria-label="分类"
-                    value={selectedEntry.category}
-                    onChange={(event) =>
-                      updateLoreEntry(selectedEntry.id, {
-                        category: event.target.value as typeof selectedEntry.category,
-                      })
-                    }
-                  >
-                    <option value="location">地点</option>
-                    <option value="term">术语</option>
-                    <option value="world_rule">世界规则</option>
-                    <option value="event">事件</option>
-                  </select>
-                </label>
-                <label>
-                  描述
-                  <textarea
-                    value={selectedEntry.description}
-                    onChange={(event) =>
-                      updateLoreEntry(selectedEntry.id, {
-                        description: event.target.value,
-                      })
-                    }
-                  />
-                </label>
-                <section aria-label="与场景的基础关联">
-                  <h4>与场景的基础关联</h4>
-                  {relatedScenes.length > 0 ? (
-                    <ul>
-                      {relatedScenes.map((association) => (
-                        <li key={association.sceneId}>
-                          <strong>{association.sceneTitle}</strong>
-                          <div>命中字段：{association.matchedFields.join("、")}</div>
-                          <div>提及内容：{association.snippet}</div>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p>当前设定还没有在场景标题、简介或正文中被提及。</p>
-                  )}
-                </section>
+                <LoreDetailForm
+                  entry={selectedEntry}
+                  onUpdate={(input) => updateLoreEntry(selectedEntry.id, input)}
+                />
+                <LoreSceneAssociationList associations={relatedScenes} />
               </>
             ) : (
               <p>点击“新建设定”开始整理世界观资料。</p>

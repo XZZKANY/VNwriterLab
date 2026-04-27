@@ -1,23 +1,27 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, vi } from "vitest";
-import type { Project, ProjectTemplate } from "../../../lib/domain/project";
-import type { LoreEntry } from "../../../lib/domain/lore";
-import { resetProjectRepositoryForTesting } from "../../../lib/repositories/projectRepositoryRuntime";
+import type { Project, ProjectTemplate } from "@/lib/domain/project";
+import type { LoreEntry } from "@/lib/domain/lore";
+import { resetProjectRepositoryForTesting } from "@/lib/repositories/projectRepositoryRuntime";
 import {
   resetReferenceRepositoryForTesting,
   setReferenceRepositoryForTesting,
-} from "../../../lib/repositories/referenceRepositoryRuntime";
-import { useAutoSaveStore } from "../../../lib/store/useAutoSaveStore";
-import type { Scene } from "../../../lib/domain/scene";
-import { useProjectStore } from "../../projects/store/useProjectStore";
+} from "@/lib/repositories/referenceRepositoryRuntime";
+import { useAutoSaveStore } from "@/lib/store/useAutoSaveStore";
+import type { Scene } from "@/lib/domain/scene";
+import { useProjectStore } from "@/features/projects/store/useProjectStore";
 import { useLoreStore } from "../store/useLoreStore";
 import { LorePage } from "./LorePage";
 
 function createFakeProjectRepository(initialProjects: Project[] = []) {
-  const projects = new Map(initialProjects.map((project) => [project.id, project]));
+  const projects = new Map(
+    initialProjects.map((project) => [project.id, project]),
+  );
   const listProjects = vi.fn(async () => [...projects.values()]);
-  const getProject = vi.fn(async (projectId: string) => projects.get(projectId) ?? null);
+  const getProject = vi.fn(
+    async (projectId: string) => projects.get(projectId) ?? null,
+  );
   const createProject = vi.fn(
     async (input: {
       name: string;
@@ -113,7 +117,9 @@ describe("LorePage", () => {
     render(<LorePage />);
 
     expect(screen.getByRole("heading", { name: "设定" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "新建设定" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "新建设定" }),
+    ).toBeInTheDocument();
   });
 
   it("存在项目时允许新建设定并在列表中显示", async () => {
@@ -140,17 +146,23 @@ describe("LorePage", () => {
     await user.clear(screen.getByLabelText("名称"));
     await user.type(screen.getByLabelText("名称"), "旧校舍");
     await user.clear(screen.getByLabelText("描述"));
-    await user.type(screen.getByLabelText("描述"), "深夜会传来脚步声的旧建筑。");
+    await user.type(
+      screen.getByLabelText("描述"),
+      "深夜会传来脚步声的旧建筑。",
+    );
     await user.selectOptions(screen.getByLabelText("分类"), "location");
 
     expect(screen.getByDisplayValue("旧校舍")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("深夜会传来脚步声的旧建筑。")).toBeInTheDocument();
+    expect(
+      screen.getByDisplayValue("深夜会传来脚步声的旧建筑。"),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "旧校舍" })).toBeInTheDocument();
   });
 
   it("重载后会恢复设定列表与当前详情", async () => {
     const fake = createFakeProjectRepository();
-    const runtime = await import("../../../lib/repositories/projectRepositoryRuntime");
+    const runtime =
+      await import("../../../lib/repositories/projectRepositoryRuntime");
     runtime.setProjectRepositoryForTesting(fake.repository);
     const fakeReference = createFakeReferenceRepository();
     useProjectStore.getState().createProject("雨夜回响", "一段校园悬疑故事");
@@ -160,7 +172,9 @@ describe("LorePage", () => {
       throw new Error("当前项目应已创建");
     }
 
-    const firstLore = useLoreStore.getState().createLoreEntry(currentProject.id);
+    const firstLore = useLoreStore
+      .getState()
+      .createLoreEntry(currentProject.id);
     if (!firstLore) {
       throw new Error("设定应可创建");
     }
@@ -171,24 +185,25 @@ describe("LorePage", () => {
     fakeReference.seedLoreEntry(currentProject.id);
 
     vi.resetModules();
-    const reloadedRuntime = await import("../../../lib/repositories/projectRepositoryRuntime");
+    const reloadedRuntime =
+      await import("../../../lib/repositories/projectRepositoryRuntime");
     reloadedRuntime.setProjectRepositoryForTesting(fake.repository);
-    const reloadedReferenceRuntime = await import(
-      "../../../lib/repositories/referenceRepositoryRuntime"
-    );
+    const reloadedReferenceRuntime =
+      await import("../../../lib/repositories/referenceRepositoryRuntime");
     reloadedReferenceRuntime.setReferenceRepositoryForTesting(
       fakeReference.repository,
     );
-    const { useProjectStore: reloadedProjectStore } = await import(
-      "../../projects/store/useProjectStore"
-    );
+    const { useProjectStore: reloadedProjectStore } =
+      await import("../../projects/store/useProjectStore");
     await reloadedProjectStore.getState().hydrateLatestProject();
 
     const { LorePage: ReloadedLorePage } = await import("./LorePage");
 
     render(<ReloadedLorePage />);
 
-    expect(await screen.findByRole("button", { name: "旧校舍" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: "旧校舍" }),
+    ).toBeInTheDocument();
     expect(await screen.findByDisplayValue("旧校舍")).toBeInTheDocument();
   });
 
@@ -209,7 +224,9 @@ describe("LorePage", () => {
 
     render(<LorePage />);
 
-    expect(await screen.findByRole("button", { name: "旧校舍" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: "旧校舍" }),
+    ).toBeInTheDocument();
   });
 
   it("会展示与当前设定命中的场景基础关联", async () => {
@@ -220,9 +237,7 @@ describe("LorePage", () => {
       throw new Error("当前项目应已创建");
     }
 
-    const entry = useLoreStore
-      .getState()
-      .createLoreEntry(currentProject.id);
+    const entry = useLoreStore.getState().createLoreEntry(currentProject.id);
     if (!entry) {
       throw new Error("设定应可创建");
     }
@@ -260,10 +275,14 @@ describe("LorePage", () => {
 
     render(<LorePage />);
 
-    expect(screen.getByRole("heading", { name: "与场景的基础关联" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "与场景的基础关联" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("第四章")).toBeInTheDocument();
     expect(screen.getByText("命中字段：简介、正文块 1")).toBeInTheDocument();
-    expect(screen.getByText("提及内容：旧校舍的传闻一直没人证实。")).toBeInTheDocument();
+    expect(
+      screen.getByText("提及内容：旧校舍的传闻一直没人证实。"),
+    ).toBeInTheDocument();
   });
 
   it("没有命中时会显示空态", () => {
@@ -274,9 +293,7 @@ describe("LorePage", () => {
       throw new Error("当前项目应已创建");
     }
 
-    const entry = useLoreStore
-      .getState()
-      .createLoreEntry(currentProject.id);
+    const entry = useLoreStore.getState().createLoreEntry(currentProject.id);
     if (!entry) {
       throw new Error("设定应可创建");
     }

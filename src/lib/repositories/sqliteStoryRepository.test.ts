@@ -10,18 +10,14 @@ type SelectResponse = Array<Record<string, unknown>>;
 function createFakeExecutor(selectResponses: SelectResponse[] = []) {
   const selectCalls: Array<{ sql: string; bindValues: unknown[] }> = [];
   const executeCalls: Array<{ sql: string; bindValues: unknown[] }> = [];
-  const selectMock = vi.fn(
-    async (sql: string, bindValues: unknown[] = []) => {
-      selectCalls.push({ sql, bindValues });
-      return selectResponses.shift() ?? [];
-    },
-  );
-  const executeMock = vi.fn(
-    async (sql: string, bindValues: unknown[] = []) => {
-      executeCalls.push({ sql, bindValues });
-      return { rowsAffected: 1 };
-    },
-  );
+  const selectMock = vi.fn(async (sql: string, bindValues: unknown[] = []) => {
+    selectCalls.push({ sql, bindValues });
+    return selectResponses.shift() ?? [];
+  });
+  const executeMock = vi.fn(async (sql: string, bindValues: unknown[] = []) => {
+    executeCalls.push({ sql, bindValues });
+    return { rowsAffected: 1 };
+  });
 
   const executor: SqlExecutor = {
     select: async <T extends Record<string, unknown>>(
@@ -232,7 +228,9 @@ describe("createSqliteStoryRepository", () => {
     ]);
     const repository = createSqliteStoryRepository(fake.factory);
 
-    await expect(repository.listLinks("project-1")).resolves.toEqual([createLink()]);
+    await expect(repository.listLinks("project-1")).resolves.toEqual([
+      createLink(),
+    ]);
     expect(fake.selectCalls[0]?.sql).toContain("FROM scene_links");
   });
 
@@ -245,7 +243,13 @@ describe("createSqliteStoryRepository", () => {
     expect(fake.executeCalls[0]?.sql).toContain("DELETE FROM scene_links");
     expect(fake.executeCalls[1]?.sql).toContain("INSERT INTO scene_links");
     expect(fake.executeCalls[1]?.bindValues).toEqual(
-      expect.arrayContaining(["link-1", "project-1", "scene-1", "scene-2", "choice"]),
+      expect.arrayContaining([
+        "link-1",
+        "project-1",
+        "scene-1",
+        "scene-2",
+        "choice",
+      ]),
     );
   });
 });

@@ -1,7 +1,7 @@
-import type { Project } from "../../../lib/domain/project";
-import type { Scene } from "../../../lib/domain/scene";
-import type { ProjectVariable } from "../../../lib/domain/variable";
-import type { SceneLink } from "../../editor/store/linkUtils";
+import type { Project } from "@/lib/domain/project";
+import type { Scene } from "@/lib/domain/scene";
+import type { ProjectVariable } from "@/lib/domain/variable";
+import type { SceneLink } from "@/features/editor/store/linkUtils";
 
 export interface ProjectExportPayload {
   project: Project;
@@ -18,7 +18,9 @@ export function buildProjectExportPayload(input: {
 }): ProjectExportPayload {
   return {
     project: input.project,
-    scenes: [...input.scenes].sort((left, right) => left.sortOrder - right.sortOrder),
+    scenes: [...input.scenes].sort(
+      (left, right) => left.sortOrder - right.sortOrder,
+    ),
     links: [...input.links].sort(
       (left, right) => left.priorityOrder - right.priorityOrder,
     ),

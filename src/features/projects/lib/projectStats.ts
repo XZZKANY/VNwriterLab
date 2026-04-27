@@ -1,10 +1,10 @@
-import type { Character } from "../../../lib/domain/character";
-import type { LoreEntry } from "../../../lib/domain/lore";
-import type { Project } from "../../../lib/domain/project";
-import type { Scene } from "../../../lib/domain/scene";
-import type { ProjectVariable } from "../../../lib/domain/variable";
-import { buildSceneGraph } from "../../graph/lib/graphData";
-import type { SceneLink } from "../../editor/store/linkUtils";
+import type { Character } from "@/lib/domain/character";
+import type { LoreEntry } from "@/lib/domain/lore";
+import type { Project } from "@/lib/domain/project";
+import type { Scene } from "@/lib/domain/scene";
+import type { ProjectVariable } from "@/lib/domain/variable";
+import { buildSceneGraph } from "@/features/graph/lib/graphData";
+import type { SceneLink } from "@/features/editor/store/linkUtils";
 
 export interface ProjectStats {
   routeCount: number;
@@ -44,7 +44,8 @@ export function buildProjectStats(input: BuildProjectStatsInput): ProjectStats {
   const mergedSceneIds = new Set(mergedScenes.map((scene) => scene.id));
   const projectLinks = input.links.filter(
     (link) =>
-      mergedSceneIds.has(link.fromSceneId) && mergedSceneIds.has(link.toSceneId),
+      mergedSceneIds.has(link.fromSceneId) &&
+      mergedSceneIds.has(link.toSceneId),
   );
   const projectVariables = input.variables.filter(
     (variable) => variable.projectId === input.project.id,

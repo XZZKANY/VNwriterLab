@@ -8,18 +8,14 @@ type SelectResponse = Array<Record<string, unknown>>;
 function createFakeExecutor(selectResponses: SelectResponse[] = []) {
   const selectCalls: Array<{ sql: string; bindValues: unknown[] }> = [];
   const executeCalls: Array<{ sql: string; bindValues: unknown[] }> = [];
-  const selectMock = vi.fn(
-    async (sql: string, bindValues: unknown[] = []) => {
-      selectCalls.push({ sql, bindValues });
-      return selectResponses.shift() ?? [];
-    },
-  );
-  const executeMock = vi.fn(
-    async (sql: string, bindValues: unknown[] = []) => {
-      executeCalls.push({ sql, bindValues });
-      return { rowsAffected: 1 };
-    },
-  );
+  const selectMock = vi.fn(async (sql: string, bindValues: unknown[] = []) => {
+    selectCalls.push({ sql, bindValues });
+    return selectResponses.shift() ?? [];
+  });
+  const executeMock = vi.fn(async (sql: string, bindValues: unknown[] = []) => {
+    executeCalls.push({ sql, bindValues });
+    return { rowsAffected: 1 };
+  });
 
   const executor: SqlExecutor = {
     select: async <T extends Record<string, unknown>>(

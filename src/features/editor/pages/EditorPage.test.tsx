@@ -1,23 +1,25 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SceneBlock } from "../../../lib/domain/block";
-import type { Scene } from "../../../lib/domain/scene";
-import type { ProjectVariable } from "../../../lib/domain/variable";
+import type { SceneBlock } from "@/lib/domain/block";
+import type { Scene } from "@/lib/domain/scene";
+import type { ProjectVariable } from "@/lib/domain/variable";
 import {
   resetReferenceRepositoryForTesting,
   setReferenceRepositoryForTesting,
-} from "../../../lib/repositories/referenceRepositoryRuntime";
+} from "@/lib/repositories/referenceRepositoryRuntime";
 import {
   resetStoryRepositoryForTesting,
   setStoryRepositoryForTesting,
-} from "../../../lib/repositories/storyRepositoryRuntime";
-import { useAutoSaveStore } from "../../../lib/store/useAutoSaveStore";
-import { useProjectStore } from "../../projects/store/useProjectStore";
+} from "@/lib/repositories/storyRepositoryRuntime";
+import { useAutoSaveStore } from "@/lib/store/useAutoSaveStore";
+import { useProjectStore } from "@/features/projects/store/useProjectStore";
 import { useEditorStore } from "../store/useEditorStore";
 import { EditorPage } from "./EditorPage";
 
-function createFakeReferenceRepository(initialVariables: ProjectVariable[] = []) {
+function createFakeReferenceRepository(
+  initialVariables: ProjectVariable[] = [],
+) {
   const variables = new Map(
     initialVariables.map((variable) => [variable.id, variable]),
   );
@@ -29,7 +31,9 @@ function createFakeReferenceRepository(initialVariables: ProjectVariable[] = [])
       listLoreEntries: vi.fn(async () => []),
       saveLoreEntry: vi.fn(async () => undefined),
       listVariables: vi.fn(async (projectId: string) =>
-        [...variables.values()].filter((variable) => variable.projectId === projectId),
+        [...variables.values()].filter(
+          (variable) => variable.projectId === projectId,
+        ),
       ),
       saveVariable: vi.fn(async () => undefined),
       saveVariables: vi.fn(async () => undefined),
@@ -172,9 +176,7 @@ describe("EditorPage", () => {
     await user.click(screen.getByRole("button", { name: "新增旁白" }));
     await user.type(screen.getByLabelText("旁白内容"), "雨夜里传来脚步声。");
 
-    expect(screen.getByLabelText("旁白内容")).toHaveValue(
-      "雨夜里传来脚步声。",
-    );
+    expect(screen.getByLabelText("旁白内容")).toHaveValue("雨夜里传来脚步声。");
   });
 
   it("允许删除块并保持剩余块顺序", async () => {
@@ -198,12 +200,14 @@ describe("EditorPage", () => {
         .scenes[0]?.blocks.map((block) => block.contentText),
     ).toEqual(["A", "C"]);
     expect(
-      useEditorStore.getState().scenes[0]?.blocks.map((block) => block.sortOrder),
+      useEditorStore
+        .getState()
+        .scenes[0]?.blocks.map((block) => block.sortOrder),
     ).toEqual([0, 1]);
     expect(
-      screen.getAllByLabelText("旁白内容").map((item) =>
-        (item as HTMLTextAreaElement).value,
-      ),
+      screen
+        .getAllByLabelText("旁白内容")
+        .map((item) => (item as HTMLTextAreaElement).value),
     ).toEqual(["A", "C"]);
   });
 
@@ -228,12 +232,14 @@ describe("EditorPage", () => {
         .scenes[0]?.blocks.map((block) => block.contentText),
     ).toEqual(["B", "A", "C"]);
     expect(
-      useEditorStore.getState().scenes[0]?.blocks.map((block) => block.sortOrder),
+      useEditorStore
+        .getState()
+        .scenes[0]?.blocks.map((block) => block.sortOrder),
     ).toEqual([0, 1, 2]);
     expect(
-      screen.getAllByLabelText("旁白内容").map((item) =>
-        (item as HTMLTextAreaElement).value,
-      ),
+      screen
+        .getAllByLabelText("旁白内容")
+        .map((item) => (item as HTMLTextAreaElement).value),
     ).toEqual(["B", "A", "C"]);
 
     await user.click(screen.getAllByRole("button", { name: "上移" })[1]!);
@@ -244,12 +250,14 @@ describe("EditorPage", () => {
         .scenes[0]?.blocks.map((block) => block.contentText),
     ).toEqual(["A", "B", "C"]);
     expect(
-      useEditorStore.getState().scenes[0]?.blocks.map((block) => block.sortOrder),
+      useEditorStore
+        .getState()
+        .scenes[0]?.blocks.map((block) => block.sortOrder),
     ).toEqual([0, 1, 2]);
     expect(
-      screen.getAllByLabelText("旁白内容").map((item) =>
-        (item as HTMLTextAreaElement).value,
-      ),
+      screen
+        .getAllByLabelText("旁白内容")
+        .map((item) => (item as HTMLTextAreaElement).value),
     ).toEqual(["A", "B", "C"]);
   });
 
@@ -283,9 +291,7 @@ describe("EditorPage", () => {
     await user.selectOptions(screen.getByLabelText("变量类型"), "flag");
     await user.selectOptions(screen.getByLabelText("默认值"), "1");
 
-    await user.click(
-      screen.getByRole("button", { name: "在此路线新建场景" }),
-    );
+    await user.click(screen.getByRole("button", { name: "在此路线新建场景" }));
     await user.click(screen.getByRole("button", { name: "新增条件" }));
 
     expect(screen.getByLabelText("条件变量")).toHaveValue(
@@ -320,7 +326,9 @@ describe("EditorPage", () => {
 
     render(<EditorPage />);
 
-    expect(await screen.findByRole("button", { name: "拥有钥匙" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: "拥有钥匙" }),
+    ).toBeInTheDocument();
   });
 
   it("当前项目已存在且编辑器场景为空时会自动 hydrate 场景正文", async () => {
@@ -342,7 +350,9 @@ describe("EditorPage", () => {
 
     render(<EditorPage />);
 
-    expect(await screen.findByRole("button", { name: "旧校舍入口" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: "旧校舍入口" }),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText("旁白内容")).toHaveValue("雨夜里传来脚步声。");
   });
 
@@ -357,9 +367,7 @@ describe("EditorPage", () => {
     await user.clear(screen.getByLabelText("变量名称"));
     await user.type(screen.getByLabelText("变量名称"), "拥有钥匙");
 
-    await user.click(
-      screen.getByRole("button", { name: "在此路线新建场景" }),
-    );
+    await user.click(screen.getByRole("button", { name: "在此路线新建场景" }));
     await user.click(screen.getByRole("button", { name: "新增选项" }));
     await user.type(screen.getByLabelText("选项文案"), "拿起钥匙");
     await user.selectOptions(
@@ -388,9 +396,9 @@ describe("EditorPage", () => {
 
     await user.click(screen.getAllByRole("button", { name: "下移" })[0]!);
 
-    expect(screen.getAllByRole("button", { name: /未命名场景/ })[0]).toHaveTextContent(
-      "未命名场景 2",
-    );
+    expect(
+      screen.getAllByRole("button", { name: /未命名场景/ })[0],
+    ).toHaveTextContent("未命名场景 2");
   });
 
   it("允许把场景移动到其他路线", async () => {
@@ -407,12 +415,17 @@ describe("EditorPage", () => {
 
     render(<EditorPage />);
 
-    await user.selectOptions(screen.getByLabelText("移动到路线"), targetRouteId);
+    await user.selectOptions(
+      screen.getByLabelText("移动到路线"),
+      targetRouteId,
+    );
     await user.click(screen.getByRole("button", { name: "移动场景" }));
 
     expect(screen.getAllByText("林夏线")[0]).toBeInTheDocument();
     expect(screen.getAllByText("共通线")[0]).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "未命名场景 1" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "未命名场景 1" }),
+    ).toBeInTheDocument();
   });
 
   it("条件块可以显示条件列表并新增第二项", async () => {
@@ -430,7 +443,9 @@ describe("EditorPage", () => {
     await user.click(screen.getByRole("button", { name: "在此路线新建场景" }));
     await user.click(screen.getByRole("button", { name: "新增条件" }));
 
-    expect(screen.getByRole("button", { name: "添加条件项" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "添加条件项" }),
+    ).toBeInTheDocument();
     expect(screen.getAllByLabelText("条件变量")).toHaveLength(1);
 
     await user.click(screen.getByRole("button", { name: "添加条件项" }));
@@ -454,7 +469,7 @@ describe("EditorPage", () => {
       .getState()
       .scenes[0]?.blocks.find((block) => block.blockType === "condition");
 
-    expect(conditionBlock?.metaJson).toContain("\"logicMode\":\"any\"");
+    expect(conditionBlock?.metaJson).toContain('"logicMode":"any"');
   });
 
   it("注释块支持标记伏笔并写入线索编号", async () => {
@@ -472,8 +487,8 @@ describe("EditorPage", () => {
       .getState()
       .scenes[0]?.blocks.find((block) => block.blockType === "note");
 
-    expect(noteBlock?.metaJson).toContain("\"noteType\":\"foreshadow\"");
-    expect(noteBlock?.metaJson).toContain("\"threadId\":\"old-school-key\"");
+    expect(noteBlock?.metaJson).toContain('"noteType":"foreshadow"');
+    expect(noteBlock?.metaJson).toContain('"threadId":"old-school-key"');
   });
 
   it("允许编辑场景基础信息并同步到 project 和 editor", async () => {
@@ -486,11 +501,13 @@ describe("EditorPage", () => {
     useEditorStore.getState().importScene(scene);
     useEditorStore.getState().selectScene(scene.id);
     useEditorStore.getState().addBlock("narration");
-    useEditorStore.getState().updateBlockContent(
-      scene.id,
-      useEditorStore.getState().scenes[0]!.blocks[0]!.id,
-      "雨夜里传来脚步声。",
-    );
+    useEditorStore
+      .getState()
+      .updateBlockContent(
+        scene.id,
+        useEditorStore.getState().scenes[0]!.blocks[0]!.id,
+        "雨夜里传来脚步声。",
+      );
 
     render(<EditorPage />);
 
@@ -504,7 +521,9 @@ describe("EditorPage", () => {
     await user.click(screen.getByLabelText("是否结局场景"));
 
     expect(screen.getByLabelText("场景标题")).toHaveValue("第一章：回到旧校舍");
-    expect(screen.getByLabelText("场景摘要")).toHaveValue("雨声落在废弃走廊里。");
+    expect(screen.getByLabelText("场景摘要")).toHaveValue(
+      "雨声落在废弃走廊里。",
+    );
     expect(screen.getByLabelText("场景类型")).toHaveValue("branch");
     expect(screen.getByLabelText("场景状态")).toHaveValue("completed");
     expect(screen.getByLabelText("是否起始场景")).not.toBeChecked();
@@ -554,7 +573,10 @@ describe("EditorPage", () => {
       screen.getByRole("option", { name: "待检查逻辑" }),
     ).toBeInTheDocument();
 
-    await user.selectOptions(screen.getByLabelText("场景状态"), "needs_supplement");
+    await user.selectOptions(
+      screen.getByLabelText("场景状态"),
+      "needs_supplement",
+    );
     expect(screen.getByLabelText("场景状态")).toHaveValue("needs_supplement");
   });
 
@@ -576,12 +598,14 @@ describe("EditorPage", () => {
     useEditorStore.getState().addBlock("choice");
     const choiceBlockId = useEditorStore.getState().scenes[0]?.blocks[0]?.id;
     if (choiceBlockId) {
-      useEditorStore.getState().updateChoiceBlock(firstScene.id, choiceBlockId, {
-        label: "前往中间场景",
-        targetSceneId: secondScene.id,
-        effectVariableId: null,
-        effectValue: 0,
-      });
+      useEditorStore
+        .getState()
+        .updateChoiceBlock(firstScene.id, choiceBlockId, {
+          label: "前往中间场景",
+          targetSceneId: secondScene.id,
+          effectVariableId: null,
+          effectValue: 0,
+        });
     }
 
     render(<EditorPage />);
@@ -590,18 +614,21 @@ describe("EditorPage", () => {
     await user.click(screen.getAllByRole("button", { name: "删除场景" })[1]!);
 
     expect(useEditorStore.getState().selectedSceneId).toBe(thirdScene.id);
-    expect(useProjectStore.getState().currentProject?.scenes.map((scene) => scene.id)).toEqual([
-      firstScene.id,
-      thirdScene.id,
-    ]);
-    expect(useProjectStore.getState().currentProject?.scenes.map((scene) => scene.sortOrder)).toEqual([
-      0,
-      1,
-    ]);
-    expect(useProjectStore.getState().currentProject?.scenes.map((scene) => scene.isStartScene)).toEqual([
-      true,
-      false,
-    ]);
+    expect(
+      useProjectStore
+        .getState()
+        .currentProject?.scenes.map((scene) => scene.id),
+    ).toEqual([firstScene.id, thirdScene.id]);
+    expect(
+      useProjectStore
+        .getState()
+        .currentProject?.scenes.map((scene) => scene.sortOrder),
+    ).toEqual([0, 1]);
+    expect(
+      useProjectStore
+        .getState()
+        .currentProject?.scenes.map((scene) => scene.isStartScene),
+    ).toEqual([true, false]);
     expect(useEditorStore.getState().links).toHaveLength(0);
     expect(screen.getByLabelText("场景标题")).toHaveValue(thirdScene.title);
   });
@@ -632,22 +659,30 @@ describe("EditorPage", () => {
     await user.click(screen.getByRole("button", { name: "新增条件" }));
     await user.click(screen.getByRole("button", { name: "新增选项" }));
 
-    await user.selectOptions(screen.getByLabelText("条件变量"), firstVariable.id);
-    await user.selectOptions(screen.getByLabelText("修改变量"), firstVariable.id);
+    await user.selectOptions(
+      screen.getByLabelText("条件变量"),
+      firstVariable.id,
+    );
+    await user.selectOptions(
+      screen.getByLabelText("修改变量"),
+      firstVariable.id,
+    );
 
     useEditorStore.getState().selectVariable(firstVariable.id);
     await user.click(screen.getByRole("button", { name: "删除变量" }));
 
-    expect(useEditorStore.getState().variables.map((variable) => variable.id)).toEqual([
+    expect(
+      useEditorStore.getState().variables.map((variable) => variable.id),
+    ).toEqual([secondVariable.id]);
+    expect(useEditorStore.getState().selectedVariableId).toBe(
       secondVariable.id,
-    ]);
-    expect(useEditorStore.getState().selectedVariableId).toBe(secondVariable.id);
-    expect(
-      useEditorStore.getState().scenes[0]?.blocks[0]?.metaJson,
-    ).toContain('"conditions":[{"variableId":null');
-    expect(
-      useEditorStore.getState().scenes[0]?.blocks[1]?.metaJson,
-    ).toContain('"effectVariableId":null');
+    );
+    expect(useEditorStore.getState().scenes[0]?.blocks[0]?.metaJson).toContain(
+      '"conditions":[{"variableId":null',
+    );
+    expect(useEditorStore.getState().scenes[0]?.blocks[1]?.metaJson).toContain(
+      '"effectVariableId":null',
+    );
     expect(screen.getByLabelText("变量名称")).toHaveValue("表示值");
   });
 
@@ -667,26 +702,32 @@ describe("EditorPage", () => {
 
     useEditorStore.getState().selectScene(firstScene.id);
     useEditorStore.getState().addBlock("choice");
-    const firstChoiceBlockId = useEditorStore.getState().scenes[0]?.blocks[0]?.id;
+    const firstChoiceBlockId =
+      useEditorStore.getState().scenes[0]?.blocks[0]?.id;
     if (firstChoiceBlockId) {
-      useEditorStore.getState().updateChoiceBlock(firstScene.id, firstChoiceBlockId, {
-        label: "前往终点场景",
-        targetSceneId: secondScene.id,
-        effectVariableId: null,
-        effectValue: 0,
-      });
+      useEditorStore
+        .getState()
+        .updateChoiceBlock(firstScene.id, firstChoiceBlockId, {
+          label: "前往终点场景",
+          targetSceneId: secondScene.id,
+          effectVariableId: null,
+          effectValue: 0,
+        });
     }
 
     useEditorStore.getState().selectScene(thirdScene.id);
     useEditorStore.getState().addBlock("choice");
-    const secondChoiceBlockId = useEditorStore.getState().scenes[2]?.blocks[0]?.id;
+    const secondChoiceBlockId =
+      useEditorStore.getState().scenes[2]?.blocks[0]?.id;
     if (secondChoiceBlockId) {
-      useEditorStore.getState().updateChoiceBlock(thirdScene.id, secondChoiceBlockId, {
-        label: "前往终点场景",
-        targetSceneId: secondScene.id,
-        effectVariableId: null,
-        effectValue: 0,
-      });
+      useEditorStore
+        .getState()
+        .updateChoiceBlock(thirdScene.id, secondChoiceBlockId, {
+          label: "前往终点场景",
+          targetSceneId: secondScene.id,
+          effectVariableId: null,
+          effectValue: 0,
+        });
     }
 
     render(<EditorPage />);
@@ -694,15 +735,16 @@ describe("EditorPage", () => {
     await user.click(screen.getByRole("button", { name: secondScene.title }));
     await user.click(screen.getAllByRole("button", { name: "删除场景" })[1]!);
 
-    expect(useProjectStore.getState().currentProject?.scenes.map((scene) => scene.id)).toEqual([
-      firstScene.id,
-      thirdScene.id,
-    ]);
     expect(
-      useEditorStore.getState().scenes[0]?.blocks[0]?.metaJson,
-    ).toContain('"targetSceneId":null');
-    expect(
-      useEditorStore.getState().scenes[1]?.blocks[0]?.metaJson,
-    ).toContain('"targetSceneId":null');
+      useProjectStore
+        .getState()
+        .currentProject?.scenes.map((scene) => scene.id),
+    ).toEqual([firstScene.id, thirdScene.id]);
+    expect(useEditorStore.getState().scenes[0]?.blocks[0]?.metaJson).toContain(
+      '"targetSceneId":null',
+    );
+    expect(useEditorStore.getState().scenes[1]?.blocks[0]?.metaJson).toContain(
+      '"targetSceneId":null',
+    );
   });
 });

@@ -56,7 +56,7 @@ const router = createBrowserRouter([
         element: withRouteSuspense(
           <>
             <LazyProjectHomePage />
-            <footer style={{ marginTop: "24px", color: "#6b7280" }}>
+            <footer className="app-version">
               当前版本：V1 桌面创作闭环验证版
             </footer>
           </>,

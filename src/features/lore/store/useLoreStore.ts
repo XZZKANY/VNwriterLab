@@ -3,9 +3,9 @@ import {
   createEmptyLoreEntry,
   type LoreCategory,
   type LoreEntry,
-} from "../../../lib/domain/lore";
-import { getReferenceRepository } from "../../../lib/repositories/referenceRepositoryRuntime";
-import { useAutoSaveStore } from "../../../lib/store/useAutoSaveStore";
+} from "@/lib/domain/lore";
+import { getReferenceRepository } from "@/lib/repositories/referenceRepositoryRuntime";
+import { useAutoSaveStore } from "@/lib/store/useAutoSaveStore";
 
 interface LoreState {
   entries: LoreEntry[];
@@ -15,7 +15,9 @@ interface LoreState {
   selectLoreEntry: (entryId: string) => void;
   updateLoreEntry: (
     entryId: string,
-    input: Partial<Pick<LoreEntry, "name" | "category" | "description" | "tags">>,
+    input: Partial<
+      Pick<LoreEntry, "name" | "category" | "description" | "tags">
+    >,
   ) => void;
   resetLoreEntries: () => void;
 }
@@ -34,13 +36,14 @@ export const useLoreStore = create<LoreState>()((set, get) => ({
       return;
     }
 
-    const entries = await getReferenceRepository().listLoreEntries(trimmedProjectId);
+    const entries =
+      await getReferenceRepository().listLoreEntries(trimmedProjectId);
     const currentSelectedLoreId = get().selectedLoreId;
     const nextSelectedLoreId =
       currentSelectedLoreId &&
       entries.some((entry) => entry.id === currentSelectedLoreId)
         ? currentSelectedLoreId
-        : entries[0]?.id ?? null;
+        : (entries[0]?.id ?? null);
 
     set({
       entries,
@@ -59,8 +62,9 @@ export const useLoreStore = create<LoreState>()((set, get) => ({
 
     const nextEntry = createEmptyLoreEntry({
       projectId: trimmedProjectId,
-      index: get().entries.filter((entry) => entry.projectId === trimmedProjectId)
-        .length,
+      index: get().entries.filter(
+        (entry) => entry.projectId === trimmedProjectId,
+      ).length,
     });
 
     set({
@@ -89,7 +93,8 @@ export const useLoreStore = create<LoreState>()((set, get) => ({
         ? {
             ...entry,
             ...input,
-            category: (input.category as LoreCategory | undefined) ?? entry.category,
+            category:
+              (input.category as LoreCategory | undefined) ?? entry.category,
           }
         : entry,
     );

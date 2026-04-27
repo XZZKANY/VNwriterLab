@@ -127,7 +127,9 @@ export function createSqliteStoryRepository(
     async createScene(input) {
       const executor = await createExecutor();
       if (!input.scene) {
-        const maxSortRows = await executor.select<{ max_sort_order: number | null }>(
+        const maxSortRows = await executor.select<{
+          max_sort_order: number | null;
+        }>(
           `SELECT COALESCE(MAX(sort_order), -1) AS max_sort_order
            FROM scenes
            WHERE route_id = $1`,

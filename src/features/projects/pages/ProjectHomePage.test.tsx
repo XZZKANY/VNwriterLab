@@ -1,13 +1,13 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Project } from "../../../lib/domain/project";
-import type { Scene } from "../../../lib/domain/scene";
-import { useAutoSaveStore } from "../../../lib/store/useAutoSaveStore";
-import { resetProjectRepositoryForTesting } from "../../../lib/repositories/projectRepositoryRuntime";
-import { useCharacterStore } from "../../characters/store/useCharacterStore";
-import { useEditorStore } from "../../editor/store/useEditorStore";
-import { useLoreStore } from "../../lore/store/useLoreStore";
+import type { Project } from "@/lib/domain/project";
+import type { Scene } from "@/lib/domain/scene";
+import { useAutoSaveStore } from "@/lib/store/useAutoSaveStore";
+import { resetProjectRepositoryForTesting } from "@/lib/repositories/projectRepositoryRuntime";
+import { useCharacterStore } from "@/features/characters/store/useCharacterStore";
+import { useEditorStore } from "@/features/editor/store/useEditorStore";
+import { useLoreStore } from "@/features/lore/store/useLoreStore";
 import { useProjectStore } from "../store/useProjectStore";
 import { ProjectHomePage } from "./ProjectHomePage";
 
@@ -16,9 +16,10 @@ const { navigateMock } = vi.hoisted(() => ({
 }));
 
 vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual<typeof import("react-router-dom")>(
-    "react-router-dom",
-  );
+  const actual =
+    await vi.importActual<typeof import("react-router-dom")>(
+      "react-router-dom",
+    );
 
   return {
     ...actual,
@@ -111,9 +112,15 @@ describe("ProjectHomePage", () => {
 
     const recentRegion = screen.getByRole("region", { name: "最近编辑" });
     expect(within(recentRegion).getByText("旧校舍入口")).toBeInTheDocument();
-    expect(within(recentRegion).getByText("所属路线：主线")).toBeInTheDocument();
-    expect(within(recentRegion).getByText("当前状态：需修改")).toBeInTheDocument();
-    expect(within(recentRegion).getByText("最近修改的场景摘要。")).toBeInTheDocument();
+    expect(
+      within(recentRegion).getByText("所属路线：主线"),
+    ).toBeInTheDocument();
+    expect(
+      within(recentRegion).getByText("当前状态：需修改"),
+    ).toBeInTheDocument();
+    expect(
+      within(recentRegion).getByText("最近修改的场景摘要。"),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "继续写作" }));
     expect(useEditorStore.getState().selectedSceneId).toBe(recentScene.id);
@@ -143,18 +150,26 @@ describe("ProjectHomePage", () => {
     render(<ProjectHomePage />);
 
     const recentRegion = screen.getByRole("region", { name: "最近编辑" });
-    expect(within(recentRegion).getByText("暂无可继续创作的场景。")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "继续写作" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "打开分支图" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "从头预览" })).not.toBeInTheDocument();
+    expect(
+      within(recentRegion).getByText("暂无可继续创作的场景。"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "继续写作" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "打开分支图" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "从头预览" }),
+    ).not.toBeInTheDocument();
   });
 
   it("项目创建表单只暴露三种模板", () => {
     render(<ProjectHomePage />);
 
-    expect(within(screen.getByLabelText("项目模板")).getAllByRole("option")).toHaveLength(
-      3,
-    );
+    expect(
+      within(screen.getByLabelText("项目模板")).getAllByRole("option"),
+    ).toHaveLength(3);
   });
 
   it("允许创建线性短篇并初始化单路线单场景结构", async () => {
@@ -170,9 +185,9 @@ describe("ProjectHomePage", () => {
     expect(screen.getByText("主线")).toBeInTheDocument();
     expect(screen.getByText("场景数：1")).toBeInTheDocument();
     expect(screen.getByText("开场")).toBeInTheDocument();
-    expect(useEditorStore.getState().scenes.map((scene) => scene.title)).toEqual([
-      "开场",
-    ]);
+    expect(
+      useEditorStore.getState().scenes.map((scene) => scene.title),
+    ).toEqual(["开场"]);
   });
 
   it("允许创建多结局模板并初始化结局结构", async () => {
@@ -188,11 +203,9 @@ describe("ProjectHomePage", () => {
     expect(screen.getByText("主线")).toBeInTheDocument();
     expect(screen.getByText("场景数：3")).toBeInTheDocument();
     expect(screen.getByText("结局场景数：2")).toBeInTheDocument();
-    expect(useEditorStore.getState().scenes.map((scene) => scene.title)).toEqual([
-      "开场",
-      "普通结局",
-      "真结局",
-    ]);
+    expect(
+      useEditorStore.getState().scenes.map((scene) => scene.title),
+    ).toEqual(["开场", "普通结局", "真结局"]);
   });
 
   it("允许创建共通线 + 角色线模板并初始化结构", async () => {
@@ -202,18 +215,19 @@ describe("ProjectHomePage", () => {
 
     await user.type(screen.getByLabelText("项目名称"), "雨夜回响");
     await user.type(screen.getByLabelText("一句话简介"), "一段校园悬疑故事");
-    await user.selectOptions(screen.getByLabelText("项目模板"), "route_character");
+    await user.selectOptions(
+      screen.getByLabelText("项目模板"),
+      "route_character",
+    );
     await user.click(screen.getByRole("button", { name: "创建项目" }));
 
     expect(screen.getByText("共通线")).toBeInTheDocument();
     expect(screen.getByText("角色线 1")).toBeInTheDocument();
     expect(screen.getByText("角色线 2")).toBeInTheDocument();
     expect(screen.getByText("场景总数：3")).toBeInTheDocument();
-    expect(useEditorStore.getState().scenes.map((scene) => scene.title)).toEqual([
-      "共通线开场",
-      "角色线 1 开场",
-      "角色线 2 开场",
-    ]);
+    expect(
+      useEditorStore.getState().scenes.map((scene) => scene.title),
+    ).toEqual(["共通线开场", "角色线 1 开场", "角色线 2 开场"]);
   });
 
   it("支持生成三种导出内容", async () => {
@@ -251,7 +265,7 @@ describe("ProjectHomePage", () => {
     await user.click(screen.getByRole("button", { name: "生成结构化 JSON" }));
     expect(
       (screen.getByLabelText("导出结果") as HTMLTextAreaElement).value,
-    ).toContain("\"name\": \"雨夜回响\"");
+    ).toContain('"name": "雨夜回响"');
 
     await user.click(screen.getByRole("button", { name: "生成纯文本稿" }));
     expect(

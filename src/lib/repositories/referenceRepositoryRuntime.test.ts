@@ -34,7 +34,9 @@ function createLoreEntry(overrides: Partial<LoreEntry> = {}): LoreEntry {
   };
 }
 
-function createVariable(overrides: Partial<ProjectVariable> = {}): ProjectVariable {
+function createVariable(
+  overrides: Partial<ProjectVariable> = {},
+): ProjectVariable {
   return {
     id: "variable-1",
     projectId: "project-1",
@@ -52,19 +54,25 @@ function createFakeReferenceRepository(): ReferenceRepository {
 
   return {
     async listCharacters(projectId) {
-      return [...characters.values()].filter((character) => character.projectId === projectId);
+      return [...characters.values()].filter(
+        (character) => character.projectId === projectId,
+      );
     },
     async saveCharacter(character) {
       characters.set(character.id, character);
     },
     async listLoreEntries(projectId) {
-      return [...loreEntries.values()].filter((entry) => entry.projectId === projectId);
+      return [...loreEntries.values()].filter(
+        (entry) => entry.projectId === projectId,
+      );
     },
     async saveLoreEntry(entry) {
       loreEntries.set(entry.id, entry);
     },
     async listVariables(projectId) {
-      return [...variables.values()].filter((variable) => variable.projectId === projectId);
+      return [...variables.values()].filter(
+        (variable) => variable.projectId === projectId,
+      );
     },
     async saveVariable(variable) {
       variables.set(variable.id, variable);
@@ -93,7 +101,8 @@ function setTauriInternals(value: unknown) {
 
 function clearTauriInternals() {
   if ("__TAURI_INTERNALS__" in window) {
-    delete (window as Window & { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__;
+    delete (window as Window & { __TAURI_INTERNALS__?: unknown })
+      .__TAURI_INTERNALS__;
   }
 }
 

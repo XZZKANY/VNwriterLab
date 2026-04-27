@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import type { ProjectTemplate } from "../../../lib/domain/project";
+import type { ProjectTemplate } from "@/lib/domain/project";
 
 interface ProjectCreateFormProps {
   onSubmit: (name: string, summary: string, template: ProjectTemplate) => void;
@@ -19,10 +19,7 @@ export function ProjectCreateForm({ onSubmit }: ProjectCreateFormProps) {
     <form onSubmit={handleSubmit}>
       <label>
         项目名称
-        <input
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-        />
+        <input value={name} onChange={(event) => setName(event.target.value)} />
       </label>
       <label>
         一句话简介

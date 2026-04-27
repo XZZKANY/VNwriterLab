@@ -10,18 +10,14 @@ type SelectResponse = Array<Record<string, unknown>>;
 function createFakeExecutor(selectResponses: SelectResponse[] = []) {
   const selectCalls: Array<{ sql: string; bindValues: unknown[] }> = [];
   const executeCalls: Array<{ sql: string; bindValues: unknown[] }> = [];
-  const selectMock = vi.fn(
-    async (sql: string, bindValues: unknown[] = []) => {
-      selectCalls.push({ sql, bindValues });
-      return selectResponses.shift() ?? [];
-    },
-  );
-  const executeMock = vi.fn(
-    async (sql: string, bindValues: unknown[] = []) => {
-      executeCalls.push({ sql, bindValues });
-      return { rowsAffected: 1 };
-    },
-  );
+  const selectMock = vi.fn(async (sql: string, bindValues: unknown[] = []) => {
+    selectCalls.push({ sql, bindValues });
+    return selectResponses.shift() ?? [];
+  });
+  const executeMock = vi.fn(async (sql: string, bindValues: unknown[] = []) => {
+    executeCalls.push({ sql, bindValues });
+    return { rowsAffected: 1 };
+  });
 
   const executor: SqlExecutor = {
     select: async <T extends Record<string, unknown>>(
@@ -166,7 +162,9 @@ describe("createSqliteReferenceRepository", () => {
 
     await repository.saveVariable(createVariable());
 
-    expect(fake.executeCalls[0]?.sql).toContain("INSERT INTO project_variables");
+    expect(fake.executeCalls[0]?.sql).toContain(
+      "INSERT INTO project_variables",
+    );
     expect(fake.executeCalls[0]?.sql).toContain("ON CONFLICT(id) DO UPDATE");
   });
 
@@ -176,9 +174,13 @@ describe("createSqliteReferenceRepository", () => {
 
     await repository.saveVariables("project-1", [createVariable()]);
 
-    expect(fake.executeCalls[0]?.sql).toContain("DELETE FROM project_variables");
+    expect(fake.executeCalls[0]?.sql).toContain(
+      "DELETE FROM project_variables",
+    );
     expect(fake.executeCalls[0]?.bindValues).toEqual(["project-1"]);
-    expect(fake.executeCalls[1]?.sql).toContain("INSERT INTO project_variables");
+    expect(fake.executeCalls[1]?.sql).toContain(
+      "INSERT INTO project_variables",
+    );
     expect(fake.executeCalls[1]?.bindValues).toEqual(
       expect.arrayContaining(["variable-1", "project-1", "拥有钥匙"]),
     );

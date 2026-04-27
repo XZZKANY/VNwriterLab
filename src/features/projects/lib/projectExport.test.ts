@@ -58,8 +58,8 @@ const mockPayload = buildProjectExportPayload({
 describe("projectExport", () => {
   it("支持导出结构化 JSON", () => {
     const json = exportProjectAsJson(mockPayload);
-    expect(json).toContain("\"name\": \"雨夜回响\"");
-    expect(json).toContain("\"title\": \"开场\"");
+    expect(json).toContain('"name": "雨夜回响"');
+    expect(json).toContain('"title": "开场"');
   });
 
   it("支持导出纯文本稿", () => {
@@ -71,6 +71,6 @@ describe("projectExport", () => {
   it("支持导出引擎草稿脚本", () => {
     const script = exportProjectAsEngineDraft(mockPayload);
     expect(script).toContain("label s1:");
-    expect(script).toContain("\"雨夜里传来脚步声。\"");
+    expect(script).toContain('"雨夜里传来脚步声。"');
   });
 });

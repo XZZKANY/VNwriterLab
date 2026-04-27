@@ -1,4 +1,4 @@
-import type { ProjectVariable } from "../../../lib/domain/variable";
+import type { ProjectVariable } from "@/lib/domain/variable";
 import {
   createDefaultConditionItem,
   type ConditionBlockItem,
@@ -23,7 +23,9 @@ export function ConditionBlockEditor({
         currentIndex === index
           ? {
               variableId:
-                input.variableId === undefined ? item.variableId : input.variableId,
+                input.variableId === undefined
+                  ? item.variableId
+                  : input.variableId,
               operator: input.operator ?? item.operator,
               compareValue:
                 typeof input.compareValue === "number"

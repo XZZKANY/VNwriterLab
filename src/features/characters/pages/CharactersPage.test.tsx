@@ -1,23 +1,25 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, vi } from "vitest";
-import type { Project, ProjectTemplate } from "../../../lib/domain/project";
-import {
-  resetProjectRepositoryForTesting,
-} from "../../../lib/repositories/projectRepositoryRuntime";
+import type { Project, ProjectTemplate } from "@/lib/domain/project";
+import { resetProjectRepositoryForTesting } from "@/lib/repositories/projectRepositoryRuntime";
 import {
   resetReferenceRepositoryForTesting,
   setReferenceRepositoryForTesting,
-} from "../../../lib/repositories/referenceRepositoryRuntime";
-import { useEditorStore } from "../../editor/store/useEditorStore";
-import { useAutoSaveStore } from "../../../lib/store/useAutoSaveStore";
-import { useProjectStore } from "../../projects/store/useProjectStore";
+} from "@/lib/repositories/referenceRepositoryRuntime";
+import { useEditorStore } from "@/features/editor/store/useEditorStore";
+import { useAutoSaveStore } from "@/lib/store/useAutoSaveStore";
+import { useProjectStore } from "@/features/projects/store/useProjectStore";
 import { CharactersPage } from "./CharactersPage";
 
 function createFakeProjectRepository(initialProjects: Project[] = []) {
-  const projects = new Map(initialProjects.map((project) => [project.id, project]));
+  const projects = new Map(
+    initialProjects.map((project) => [project.id, project]),
+  );
   const listProjects = vi.fn(async () => [...projects.values()]);
-  const getProject = vi.fn(async (projectId: string) => projects.get(projectId) ?? null);
+  const getProject = vi.fn(
+    async (projectId: string) => projects.get(projectId) ?? null,
+  );
   const createProject = vi.fn(
     async (input: {
       name: string;
@@ -45,12 +47,28 @@ function createFakeProjectRepository(initialProjects: Project[] = []) {
 }
 
 function createFakeReferenceRepository() {
-  const characters = new Map<string, { id: string; projectId: string; name: string; identity: string; appearance: string; personality: string; goal: string; secret: string; routeId: string | null; notes: string }>();
+  const characters = new Map<
+    string,
+    {
+      id: string;
+      projectId: string;
+      name: string;
+      identity: string;
+      appearance: string;
+      personality: string;
+      goal: string;
+      secret: string;
+      routeId: string | null;
+      notes: string;
+    }
+  >();
 
   return {
     repository: {
       listCharacters: vi.fn(async (projectId: string) =>
-        [...characters.values()].filter((character) => character.projectId === projectId),
+        [...characters.values()].filter(
+          (character) => character.projectId === projectId,
+        ),
       ),
       saveCharacter: vi.fn(async (character) => {
         characters.set(character.id, character);
@@ -92,7 +110,9 @@ describe("CharactersPage", () => {
     render(<CharactersPage />);
 
     expect(screen.getByRole("heading", { name: "角色" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "新增角色" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "新增角色" }),
+    ).toBeInTheDocument();
   });
 
   it("存在项目时允许新增角色并在列表中显示", async () => {
@@ -127,45 +147,45 @@ describe("CharactersPage", () => {
 
   it("重载后会恢复角色列表与当前详情", async () => {
     const fake = createFakeProjectRepository();
-    const runtime = await import("../../../lib/repositories/projectRepositoryRuntime");
+    const runtime =
+      await import("../../../lib/repositories/projectRepositoryRuntime");
     runtime.setProjectRepositoryForTesting(fake.repository);
     const fakeReference = createFakeReferenceRepository();
     useProjectStore.getState().createProject("雨夜回响", "一段校园悬疑故事");
 
     const { useCharacterStore } = await import("../store/useCharacterStore");
 
-    useCharacterStore.getState().createCharacter(
-      useProjectStore.getState().currentProject!.id,
-    );
-    useCharacterStore.getState().updateCharacter(
-      useCharacterStore.getState().selectedCharacterId!,
-      {
+    useCharacterStore
+      .getState()
+      .createCharacter(useProjectStore.getState().currentProject!.id);
+    useCharacterStore
+      .getState()
+      .updateCharacter(useCharacterStore.getState().selectedCharacterId!, {
         name: "林夏",
-      },
-    );
+      });
     fakeReference.seedCharacter(useProjectStore.getState().currentProject!.id);
 
     vi.resetModules();
-    const reloadedRuntime = await import("../../../lib/repositories/projectRepositoryRuntime");
+    const reloadedRuntime =
+      await import("../../../lib/repositories/projectRepositoryRuntime");
     reloadedRuntime.setProjectRepositoryForTesting(fake.repository);
-    const reloadedReferenceRuntime = await import(
-      "../../../lib/repositories/referenceRepositoryRuntime"
-    );
+    const reloadedReferenceRuntime =
+      await import("../../../lib/repositories/referenceRepositoryRuntime");
     reloadedReferenceRuntime.setReferenceRepositoryForTesting(
       fakeReference.repository,
     );
-    const { useProjectStore: reloadedProjectStore } = await import(
-      "../../projects/store/useProjectStore"
-    );
+    const { useProjectStore: reloadedProjectStore } =
+      await import("../../projects/store/useProjectStore");
     await reloadedProjectStore.getState().hydrateLatestProject();
 
-    const { CharactersPage: ReloadedCharactersPage } = await import(
-      "./CharactersPage"
-    );
+    const { CharactersPage: ReloadedCharactersPage } =
+      await import("./CharactersPage");
 
     render(<ReloadedCharactersPage />);
 
-    expect(await screen.findByRole("button", { name: "林夏" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: "林夏" }),
+    ).toBeInTheDocument();
     expect(await screen.findByDisplayValue("林夏")).toBeInTheDocument();
   });
 
@@ -186,15 +206,20 @@ describe("CharactersPage", () => {
 
     render(<CharactersPage />);
 
-    expect(await screen.findByRole("button", { name: "林夏" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: "林夏" }),
+    ).toBeInTheDocument();
   });
 
   it("会展示角色关联路线与被场景引用信息", async () => {
     const user = userEvent.setup();
 
-    const { useProjectStore } = await import("../../projects/store/useProjectStore");
-    const { useEditorStore } = await import("../../editor/store/useEditorStore");
-    const { CharactersPage: ReloadedCharactersPage } = await import("./CharactersPage");
+    const { useProjectStore } =
+      await import("../../projects/store/useProjectStore");
+    const { useEditorStore } =
+      await import("../../editor/store/useEditorStore");
+    const { CharactersPage: ReloadedCharactersPage } =
+      await import("./CharactersPage");
 
     useProjectStore.getState().createProject("雨夜回响", "一段校园悬疑故事");
 
@@ -287,16 +312,26 @@ describe("CharactersPage", () => {
 
     await user.click(screen.getByRole("button", { name: "林夏" }));
 
-    expect(screen.getByRole("heading", { name: "与路线的关联" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "与路线的关联" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("共通线")).toBeInTheDocument();
     expect(screen.getByText("默认创建的起始路线")).toBeInTheDocument();
-    expect(screen.getByRole("list", { name: "路线场景列表" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("list", { name: "路线场景列表" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("未命名场景 1")).toBeInTheDocument();
     expect(screen.getByText("未命名场景 2")).toBeInTheDocument();
 
-    expect(screen.getByRole("heading", { name: "被哪些场景引用" })).toBeInTheDocument();
-    expect(screen.getByText("当前角色在 2 个场景中被引用。")).toBeInTheDocument();
-    expect(screen.getByRole("list", { name: "场景引用列表" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "被哪些场景引用" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("当前角色在 2 个场景中被引用。"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("list", { name: "场景引用列表" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("序章（2 处，首次出场）")).toBeInTheDocument();
     expect(screen.getByText("旧校舍（1 处）")).toBeInTheDocument();
   });
@@ -304,9 +339,12 @@ describe("CharactersPage", () => {
   it("会为最早出场的场景添加首次出场标记", async () => {
     const user = userEvent.setup();
 
-    const { useProjectStore } = await import("../../projects/store/useProjectStore");
-    const { useEditorStore } = await import("../../editor/store/useEditorStore");
-    const { CharactersPage: ReloadedCharactersPage } = await import("./CharactersPage");
+    const { useProjectStore } =
+      await import("../../projects/store/useProjectStore");
+    const { useEditorStore } =
+      await import("../../editor/store/useEditorStore");
+    const { CharactersPage: ReloadedCharactersPage } =
+      await import("./CharactersPage");
 
     useProjectStore.getState().createProject("雨夜回响", "一段校园悬疑故事");
 

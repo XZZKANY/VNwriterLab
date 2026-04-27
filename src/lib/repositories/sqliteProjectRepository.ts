@@ -81,10 +81,7 @@ function mapBlockRowToDomain(row: SqliteSceneBlockRow): SceneBlock {
   };
 }
 
-function mapSceneRowToDomain(
-  row: SqliteSceneRow,
-  blocks: SceneBlock[],
-): Scene {
+function mapSceneRowToDomain(row: SqliteSceneRow, blocks: SceneBlock[]): Scene {
   return {
     id: row.id,
     projectId: row.project_id,
@@ -144,10 +141,7 @@ async function loadProjectById(
         [sceneRow.id],
       );
 
-      return mapSceneRowToDomain(
-        sceneRow,
-        blockRows.map(mapBlockRowToDomain),
-      );
+      return mapSceneRowToDomain(sceneRow, blockRows.map(mapBlockRowToDomain));
     }),
   );
 

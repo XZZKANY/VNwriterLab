@@ -47,7 +47,9 @@ describe("createEmptyProject", () => {
       "普通结局",
       "真结局",
     ]);
-    expect(project.scenes.filter((scene) => scene.isEndingScene)).toHaveLength(2);
+    expect(project.scenes.filter((scene) => scene.isEndingScene)).toHaveLength(
+      2,
+    );
   });
 
   it("支持创建共通线加角色线模板", () => {
@@ -74,6 +76,8 @@ describe("createEmptyProject", () => {
       "角色线 1 开场",
       "角色线 2 开场",
     ]);
-    expect(project.scenes.filter((scene) => scene.isStartScene)).toHaveLength(3);
+    expect(project.scenes.filter((scene) => scene.isStartScene)).toHaveLength(
+      3,
+    );
   });
 });
