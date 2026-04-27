@@ -1,0 +1,10 @@
+node_modules
+dist
+build
+.worktrees
+src-tauri
+package-lock.json
+*.md
+.codex
+.claude
+.husky/_
