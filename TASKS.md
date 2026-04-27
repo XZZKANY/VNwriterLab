@@ -119,6 +119,14 @@ LorePage 210 → 86 行。
 ### E ✅ done — EditorPage 选择器合并
 25 个 store 订阅 → 3 个 `useShallow` 订阅。
 
+### β ✅ done — Tauri 文件导入/导出
+- 安装 `@tauri-apps/plugin-dialog` + `@tauri-apps/plugin-fs`（前端） + `tauri-plugin-dialog` + `tauri-plugin-fs`（Rust）
+- 新增 `src/lib/fileTransfer.ts`：`isTauri()` 分流到原生对话框 / Web `<a download>` + `<input type="file">`
+- ExportPanel 增 3 个"保存为 JSON/TXT/RPY 文件"按钮（保留原 3 个 textarea 预览按钮）
+- 新增 `ImportPanel` + `parseProjectImport` 校验层（11 种结构错误用中文文案返回）
+- project store 加 `importProject` action：替换 currentProject + 刷新 editor + 异步串行落盘
+- 测试覆盖：fileTransfer 4 例 + projectImport 13 例
+
 ### B ✅ done — CSS 布局工具类
 新增 `.layout-split` / `.layout-split--narrow` / `.layout-split--default` / `.layout-split--wide` 三档共享布局类，替换 5 处 inline grid 样式。
 
