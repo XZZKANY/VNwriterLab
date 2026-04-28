@@ -27,13 +27,21 @@ npm run tauri dev      # 完整 Tauri 桌面开发模式（需要本地 Rust 工
 npm test               # vitest 单跑全量
 npm run test:watch     # watch 模式
 npm run lint           # ESLint flat config 全量扫描
+npm run format         # Prettier 格式化全部 ts/tsx/json/css
+npm run format:check   # Prettier 格式检查（不改文件）
 npm run build          # tsc 类型检查 + Vite 生产构建（输出到 dist/）
 npx tsc --noEmit       # 仅做类型检查
 ```
 
-当前基线：44 个测试文件，181 个用例全绿；生产 main bundle 约 286 KB（gzip ≈ 92 KB）；ESLint 0 error / 0 warning。
+当前基线：54 个测试文件 / 315 个用例全绿；生产 main bundle 约 286 KB（gzip ≈ 92 KB）；ESLint 0 error / 0 warning；Prettier clean。
 
-CI / 提交前推荐顺序：`npm run lint && npx tsc --noEmit && npm test && npm run build`。
+提交时 husky `pre-commit` hook 会自动跑 `lint-staged`（仅对暂存文件跑 `eslint --fix` + `prettier --write`）。
+
+CI / 提交前推荐顺序（也是 `.github/workflows/ci.yml` 跑的顺序）：
+
+```bash
+npm run format:check && npm run lint && npx tsc --noEmit && npm test && npm run build
+```
 
 ## 目录结构
 

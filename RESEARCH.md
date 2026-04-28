@@ -62,9 +62,21 @@ src/
 - editor slice 的 `saveXxxSnapshot` 写入流程在 `src/features/editor/store/slices/repositorySnapshots.ts` 集中。
 
 ## 已识别的代码气味（详见 ARCHITECTURE.md 重构方案）
-1. 深层相对导入 `../../../{,../}` 共出现 130+ 次，可读性差。
-2. 长页面组件：`ProjectHomePage` 412 行、`EditorPage` 349 行。
-3. slice 中 `markDirty/markSaved/saveSnapshot` 样板重复。
-4. `moveBlockUp/Down` 与 `updateConditionBlock/updateNoteBlock` 内部高度雷同。
-5. `projectSceneSlice` 中 `moveSceneUp/Down/ToRoute` 几乎是镜像实现。
-6. `EditorPage` 单组件中 23 次独立 `useEditorStore` 订阅。
+1. ~~深层相对导入 `../../../{,../}` 共出现 130+ 次~~ → 已通过 `@/` 别名收敛
+2. ~~长页面组件：`ProjectHomePage` 412 行、`EditorPage` 349 行~~ → 已拆，对应数字降至 153 / 182
+3. ~~slice 中 `markDirty/markSaved/saveSnapshot` 样板重复~~ → 已经 `withAutosave` 包装并 slice 化
+4. ~~`moveBlockUp/Down` 与 `updateConditionBlock/updateNoteBlock` 内部高度雷同~~ → 已用 `moveBlock` / `updateBlockMeta` 收敛
+5. ~~`projectSceneSlice` 中 `moveSceneUp/Down/ToRoute` 几乎是镜像实现~~ → 已用 `applyRearrangement` 收敛
+6. ~~`EditorPage` 单组件中 23 次独立 `useEditorStore` 订阅~~ → 已收敛为 3 个 `useShallow` 订阅
+
+## 当前测试覆盖现状（截至 2026-04-28）
+- 测试文件：60，用例总数：376
+- 直接单测覆盖的核心 lib：projectWorkbench / projectFileName / projectSearch / projectStats / projectExport / projectImport / characterReferences / loreSceneAssociations / sceneTreeUtils / outlineView / viewsDashboard / graphData / graphConditionSummary / graphFilters / graphIssueDetector / previewEngine / fileTransfer
+- store slice 通过 `createXxxStoreState.test.ts` 与页面集成测试双重覆盖
+- repository（SQLite + runtime）有完整 adapter 测试
+- 自动保存语义有 `useAutoSaveStore.test.ts` 与 `persistence.test.ts` 双重保护
+
+## 已知重复 / 共享逻辑入口
+- `resolveStartScene` / `resolveRecentScene` / `mergeProjectAndEditorScenes` / `buildProjectStats`：唯一定义在 `src/features/projects/lib/projectWorkbench.ts`
+- 文件名安全化：`src/features/projects/lib/projectFileName.ts`
+- 跨 store 同步：`src/features/projects/store/editorSync.ts`

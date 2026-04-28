@@ -295,3 +295,133 @@
 - ESLint 升级到 10：需要等 `eslint-plugin-react` 发新版兼容
 - Prettier 接入：用户没明示要求；ESLint 9 的格式规则已经够用
 - 完整的 ESLint 规则收紧（如 `@typescript-eslint/strict`）：当前用 `recommended`，已经把所有常见错误挡住了，再收紧风险大于收益
+
+---
+
+## 2026-04-27 第八轮：上课托管模式（γ 暂停 + 开始 δ）
+
+用户离开电脑去上课，新模式：自动推进低风险任务。
+
+### γ 暂停说明
+用户在切上课模式之前选了 γ（架构重构：移除 `Project.scenes`）。但上课模式规则第 9 条明确"不要修改核心业务逻辑，除非已有测试明确覆盖且改动是 bugfix"。γ 不是 bugfix，是架构重构，回归面 200+ 测试 fixture。按规则**跳过 γ**。
+
+仅完成调研（γ.0），未提交代码。详见 TASKS.md 的 γ 暂停条目。
+
+### 切到 δ：让"死字段"在 UI 上活起来
+
+候选清单（domain 已有但 UI 未渲染/未编辑的字段）：
+1. `Character.appearance` —— 角色外貌 ✅
+2. `Character.notes` —— 角色笔记 ✅
+3. `Scene.chapterLabel` —— 场景章节标签 ✅
+4. `Scene.notes` —— 场景笔记 ✅
+5. `LoreEntry.tags` —— 设定标签 ✅（中英文逗号分隔；本地受控输入避免输入丢失）
+
+### δ.4–δ.13：测试覆盖补全（上课模式自动推进）
+
+| 子任务 | 范围 | 新增用例 |
+|------|------|---------|
+| δ.4 | `outlineView` 边界条件 | +7 |
+| δ.5 | `graphConditionSummary` + `graphFilters` 直接单测 | +13 |
+| δ.6 | `sqliteRepositoryUtils`（toBoolean / fromBoolean / timestamp / 状态常量） | +13 |
+| δ.7 | domain 工厂（createRoute / createSceneInRoute / createEmptyCharacter / createEmptyLoreEntry / createEmptyVariable） | +9 |
+| δ.8 | `choiceBlock`（parse / stringify / clearTargetSceneId / clearEffectVariableId） | +13 |
+| δ.9 | `previewEngine`（resolveVisibleBlocks + applyChoiceEffect 余下两个核心函数） | +11 |
+| δ.10 | `useAutoSaveStore`（markDirty/markSaved/markHydrated/reset/persist 行为） | +10 |
+| δ.11 | `projectRepositoryRuntime`（volatile + override/reset） | +9 |
+| δ.12 | `editorSync` 桥接层 5 个具名同步函数 + readEditorSelectedSceneId | +16 |
+| δ.13 | `repositorySnapshots` 4 个 snapshot helper 验证调用正确的 repo | +8 |
+
+### 累计验证
+- `npx tsc --noEmit` ✅
+- `npm run lint` ✅ 0 / 0
+- `npm run format:check` ✅
+- `npm test` ✅ **54 文件 / 315 用例**（开局 198 → +117 / +59% 覆盖）
+- `npm run build` ✅ 286 KB / gzip 92 KB
+
+### 类别选择心智
+所有选项都是"为已存在但未直接测试的纯函数加单元测试"——零行为变更、零回归风险、捕捉未来 regression 的能力增强。在不允许 commit / push 的上课模式下，这是最高 ROI 的活。
+
+### δ.14 README 同步
+README 同步新增的命令（format / format:check）、husky 钩子行为、最新测试计数（54/315）、CI 命令链。
+
+### 上课模式收尾判定
+继续走查用户给的"优先自动处理"清单，逐条复核：
+- 测试补充：✅ 已对所有有意义的纯函数加直接单测
+- lint 修复 / typecheck / build：仓库当前 0 问题
+- 小型 helper / 小型组件 / service 拆分：在前面 P0–P4 / R3 / α–δ 阶段已完成
+- 错误处理 / 日志 / 配置校验：本仓库范围之外（无后端 API、无登录、无外部网络）
+- mock backend：repository 层已有完整 volatile + override + sqlite stub
+- README / docs：已更新到当前实际状态
+- curl 示例：项目不暴露 HTTP API
+- 边界条件测试：本轮新增 117 个测试中绝大多数就是边界场景
+- 未使用 import / 死代码：earlier scan 已确认 0 处
+
+剩下的事项要么属于"中高风险"（γ 架构重构、γ-style 数据流改动），要么需要用户授权（git commit、push、新依赖）。按你协议第 9 条停止。
+
+### 工作区状态（未提交）
+所有 δ 与本会话累积的改动都留在工作区，等用户回来审核。**不自动 commit** 是协议要求。
+
+### γ 暂停说明（沿用）
+γ（移除 `Project.scenes`，让 `useEditorStore.scenes` 成为单一真源）依然暂停。它是架构重构而非 bugfix，明确不属于本模式低风险范围。等用户明确恢复指令再开。
+
+---
+
+## 2026-04-28 第九轮：低风险任务批次
+
+按用户协议（恢复流程 + 允许的低风险任务清单），完成下面四个任务：
+
+### Task 1：收敛 `resolveStartScene` 重复
+- 现状：`PreviewPage.tsx` 有本地版（含 sortOrder 兜底排序），`projectWorkbench.ts` 有共享版（无排序）
+- 改动：把 sortOrder 排序合并入共享版（projectWorkbench 现有 caller 输入已排序，加 sort 是 no-op；PreviewPage 不再需要本地版）
+- PreviewPage 改为 `import { resolveStartScene } from "@/features/projects/lib/projectWorkbench"`
+- projectWorkbench.test.ts 新增 2 例：未排序输入按 sortOrder 兜底、isStartScene 优先级高于 sortOrder
+
+### Task 2：补 `appShell.config.resolveRouteMeta` 单测
+- 现状：完全无直接单测
+- 新增 `src/app/layouts/appShell.config.test.ts`，9 个用例：
+  - navigationGroups 4 分组与 V1 七页面齐全
+  - resolveRouteMeta 精确命中、嵌套前缀命中、根路径不被前缀误匹配、未知路径回退默认
+
+### Task 3：拆分 ViewsPage（270 → 132 行）
+- 提出 4 个展示子组件：`OutlineView` / `StatusView` / `RouteView` / `ViewsSummary`
+- 内联函数 `renderActiveView` 改写为页面内部小组件 `ActiveView`
+- 主页面只剩 tab 切换 + 数据派生 + 装配
+- 保留所有 aria-label / role 语义；现有页面测试无须修改
+
+### Task 4：补 `graphIssueDetector` 直接单测（190 行核心逻辑）
+- 现状：仅通过 GraphPage 集成测试覆盖
+- 新增 `src/features/graph/lib/graphIssueDetector.test.ts`，16 用例覆盖：
+  - `collectSceneIssues`：emptyScene / contentGap / noOutgoing / noIncoming / unresolvedForeshadow / missingConditionVariable / deletedConditionVariable / missingTargetScene / deletedEffectVariable
+  - 起始/结局场景的入边/出边豁免规则
+  - choice label 非空被识别为有效内容
+  - `collectUnresolvedForeshadowMessagesByScene`：6 用例（无 note / 仅 foreshadow / 配对消解 / 空 threadId 忽略 / 空内容回退 threadId / 同场景多伏笔合并）
+
+### 验证矩阵
+| 命令 | 结果 |
+|------|------|
+| `npx tsc --noEmit` | ✅ |
+| `npm run lint` | ✅ 0 / 0 |
+| `npm test` | ✅ 59 文件 / 366 用例（基线 57 / 339 → +2 文件 / +27 用例） |
+| `npm run build` | ✅ 328 KB / gzip 103 KB |
+
+### 工作区状态
+本轮 4 个任务的全部改动都留在工作区，未提交。
+- 修改：`projectWorkbench.ts` / `projectWorkbench.test.ts` / `PreviewPage.tsx` / `ViewsPage.tsx`
+- 新增：`appShell.config.test.ts` / `graphIssueDetector.test.ts` / `views/components/{OutlineView,StatusView,RouteView,ViewsSummary}.tsx`
+
+### Task 5：把 ExportPanel.sanitizeProjectNameForFile 提到 lib
+- 现状：函数嵌在 ExportPanel.tsx 内部，无直接单测，文件名安全化逻辑（Windows 字符 + 控制字符 + 多空白 + 首尾点 + 长度截断 + 空字符串回退）有真实 bug 风险
+- 改动：新建 `src/features/projects/lib/projectFileName.ts`（27 行 + JSDoc），导出 `sanitizeProjectNameForFile`
+- ExportPanel 删除本地版本，改 import；行数从 171 → 149
+- 新增 `projectFileName.test.ts`（10 用例），覆盖：普通名 / Windows 字符 / 控制字符（用 charCode 构造避免编辑器隐式处理） / 多空白合一 / 首尾空白 / 首尾点 / 中间点保留 / 长度截断 / 空字符串和全无效字符回退 / 综合清理流水线
+
+### 验证矩阵（本批 5 任务收尾）
+| 命令 | 结果 |
+|------|------|
+| `npx tsc --noEmit` | ✅ |
+| `npm run lint` | ✅ 0 / 0 |
+| `npm test` | ✅ 60 文件 / 376 用例（基线 57 / 339 → +3 文件 / +37 用例） |
+| `npm run build` | ✅ 328 KB / gzip 103 KB |
+
+### 停止说明
+低风险清单内的剩余项目（更深层的组件拆分、域类型工厂的边界测试等）已经评估为 ROI 偏低，再做一轮风险大于收益。本批结束。

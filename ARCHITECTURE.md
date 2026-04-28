@@ -148,6 +148,15 @@ EditorPage 25 个独立 store 订阅 → 3 个 `useShallow` 订阅。
 `src/features/projects/store/editorSync.ts` 集中所有"项目动作 → editor 副作用"。
 3 个 project slice 不再 import editor store。
 
+### Q9（2026-04-28）补充：低风险任务批次后的形态
+
+- **共享纯函数集中**：`resolveStartScene` 现在是 `projectWorkbench.ts` 的单一定义，PreviewPage 与 ProjectHomePage 共用；语义包含 sortOrder 兜底排序，未排序输入也行得通。
+- **新 lib 文件**：`src/features/projects/lib/projectFileName.ts`，承载文件名安全化（独立于 fileTransfer，因为后者是 IO 边界）。
+- **测试新增**：`appShell.config.test.ts` / `graphIssueDetector.test.ts` / `projectFileName.test.ts`，三个 lib 模块从只有间接覆盖升级为有直接单测。
+- **页面继续拆分**：ViewsPage 270 → 132 行；新增 `views/components/{OutlineView,StatusView,RouteView,ViewsSummary}.tsx`。
+
+边界规范沿用 P4 + R3：超过 ~200 行的页面应当按列表/详情/侧栏/视图切换器拆出 components；纯函数从 .tsx 中抽出后必须配单测。
+
 ### D：ESLint 接入
 `eslint.config.js`（flat config）。
 - 规则：`@eslint/js` + `typescript-eslint` + `react` + `react-hooks` 全部 recommended
