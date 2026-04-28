@@ -1,34 +1,17 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AutoSaveStatus } from "@/app/components/AutoSaveStatus";
-import type { Scene } from "@/lib/domain/scene";
+import { WorkspacePageHeader } from "@/app/components/workspace/WorkspacePageHeader";
+import { WorkspacePanel } from "@/app/components/workspace/WorkspacePanel";
 import { useCharacterStore } from "@/features/characters/store/useCharacterStore";
 import { useEditorStore } from "@/features/editor/store/useEditorStore";
 import { useLoreStore } from "@/features/lore/store/useLoreStore";
-import { ExportPanel } from "../components/ExportPanel";
 import { ImportPanel } from "../components/ImportPanel";
 import { ProjectCreateForm } from "../components/ProjectCreateForm";
-import { ProjectStatsPanel } from "../components/ProjectStatsPanel";
-import { RecentSceneCard } from "../components/RecentSceneCard";
-import { RouteListPanel } from "../components/RouteListPanel";
-import { SearchPanel } from "../components/SearchPanel";
-import { buildProjectStats } from "../lib/projectStats";
+import { ProjectWorkbenchHero } from "../components/ProjectWorkbenchHero";
+import { ProjectWorkbenchSidebar } from "../components/ProjectWorkbenchSidebar";
+import { buildProjectWorkbench } from "../lib/projectWorkbench";
 import { useProjectStore } from "../store/useProjectStore";
-
-function resolveRecentScene(scenes: Scene[], selectedSceneId: string | null) {
-  if (selectedSceneId) {
-    const selectedScene = scenes.find((scene) => scene.id === selectedSceneId);
-    if (selectedScene) {
-      return selectedScene;
-    }
-  }
-
-  return scenes[scenes.length - 1] ?? null;
-}
-
-function resolveStartScene(scenes: Scene[]) {
-  return scenes.find((scene) => scene.isStartScene) ?? scenes[0] ?? null;
-}
 
 export function ProjectHomePage() {
   const navigate = useNavigate();
@@ -48,137 +31,123 @@ export function ProjectHomePage() {
   const characters = useCharacterStore((state) => state.characters);
   const loreEntries = useLoreStore((state) => state.entries);
 
-  const sortedRoutes = [...(currentProject?.routes ?? [])].sort(
-    (left, right) => {
-      if (left.sortOrder !== right.sortOrder) {
-        return left.sortOrder - right.sortOrder;
-      }
-
-      return left.id.localeCompare(right.id);
-    },
-  );
-
-  const sceneCountByRoute = new Map(
-    sortedRoutes.map((route) => [
-      route.id,
-      currentProject?.scenes.filter((scene) => scene.routeId === route.id)
-        .length ?? 0,
-    ]),
-  );
-
-  const projectStats = currentProject
-    ? buildProjectStats({
-        project: currentProject,
-        editorScenes,
-        links,
-        variables,
-        characters,
-        loreEntries,
-      })
-    : null;
-
-  const mergedSceneMap = new Map(
-    (currentProject?.scenes ?? []).map((scene) => [scene.id, scene] as const),
-  );
-  editorScenes
-    .filter((scene) => scene.projectId === currentProject?.id)
-    .forEach((scene) => {
-      mergedSceneMap.set(scene.id, scene);
-    });
-
-  const availableScenes = [...mergedSceneMap.values()].sort((left, right) => {
-    if (left.sortOrder !== right.sortOrder) {
-      return left.sortOrder - right.sortOrder;
-    }
-
-    return left.title.localeCompare(right.title, "zh-CN");
-  });
-  const projectLinks = currentProject
-    ? links.filter((link) => link.projectId === currentProject.id)
-    : [];
-  const projectVariables = currentProject
-    ? variables.filter((variable) => variable.projectId === currentProject.id)
-    : [];
-
-  const recentScene = resolveRecentScene(availableScenes, selectedSceneId);
-  const startScene = resolveStartScene(availableScenes) ?? recentScene;
-  const recentRoute =
-    sortedRoutes.find((route) => route.id === recentScene?.routeId) ?? null;
-
   useEffect(() => {
     if (!currentProject) {
       void hydrateLatestProject();
     }
   }, [currentProject, hydrateLatestProject]);
 
+  if (!currentProject) {
+    return (
+      <section className="project-home">
+        <WorkspacePageHeader
+          title="项目工作台"
+          description="先创建或导入项目，再进入工作台。"
+        />
+        <AutoSaveStatus />
+        <WorkspacePanel title="创建项目" ariaLabel="创建项目">
+          <ProjectCreateForm onSubmit={createProject} />
+        </WorkspacePanel>
+        <ImportPanel onImport={importProject} />
+      </section>
+    );
+  }
+
+  const workbench = buildProjectWorkbench({
+    project: currentProject,
+    editorScenes,
+    links,
+    variables,
+    characters,
+    loreEntries,
+    selectedSceneId,
+  });
+
+  const sortedRoutes = [...currentProject.routes].sort((left, right) => {
+    if (left.sortOrder !== right.sortOrder) {
+      return left.sortOrder - right.sortOrder;
+    }
+
+    return left.id.localeCompare(right.id);
+  });
+
+  const sceneCountByRoute = new Map(
+    workbench.routeSummaries.map(
+      (summary) => [summary.routeId, summary.sceneCount] as const,
+    ),
+  );
+
+  const projectLinks = links.filter(
+    (link) => link.projectId === currentProject.id,
+  );
+  const projectVariables = variables.filter(
+    (variable) => variable.projectId === currentProject.id,
+  );
+
   function handleContinueWriting() {
-    if (!recentScene) {
+    if (!workbench.recentScene) {
       return;
     }
 
-    selectScene(recentScene.id);
+    selectScene(workbench.recentScene.id);
     navigate("/editor");
   }
 
   function handleOpenGraph() {
-    if (recentScene) {
-      selectScene(recentScene.id);
+    if (workbench.recentScene) {
+      selectScene(workbench.recentScene.id);
     }
 
     navigate("/graph");
   }
 
   function handleStartPreview() {
-    if (startScene) {
-      selectScene(startScene.id);
+    const scene = workbench.startScene ?? workbench.recentScene;
+    if (scene) {
+      selectScene(scene.id);
     }
 
     navigate("/preview");
   }
 
   return (
-    <section>
-      <h2>项目首页</h2>
+    <section className="project-home">
+      <WorkspacePageHeader
+        title="项目工作台"
+        description="先看项目概况，再决定继续写作、检查结构还是导出内容。"
+      />
       <AutoSaveStatus />
-      {!currentProject ? (
-        <>
-          <ProjectCreateForm onSubmit={createProject} />
-          <ImportPanel onImport={importProject} />
-        </>
-      ) : (
-        <div>
-          <h3>{currentProject.name}</h3>
-          <p>{currentProject.summary}</p>
-          <p>默认路线：{sortedRoutes[0]?.name}</p>
-          {projectStats ? <ProjectStatsPanel stats={projectStats} /> : null}
-          <RecentSceneCard
-            scene={recentScene}
-            route={recentRoute}
-            onContinueWriting={handleContinueWriting}
-            onOpenGraph={handleOpenGraph}
-            onStartPreview={handleStartPreview}
-          />
-          <RouteListPanel
-            routes={sortedRoutes}
-            sceneCountByRoute={sceneCountByRoute}
-            onCreateRoute={createRoute}
-            onRenameRoute={renameRoute}
-          />
-          <ExportPanel
-            project={currentProject}
-            scenes={availableScenes}
-            links={projectLinks}
-            variables={projectVariables}
-          />
-          <ImportPanel onImport={importProject} />
-          <SearchPanel
-            project={currentProject}
-            editorScenes={editorScenes}
-            characters={characters}
-            loreEntries={loreEntries}
-          />
-        </div>
-      )}
+      <p className="project-home__default-route">
+        默认路线：{sortedRoutes[0]?.name ?? "未配置"}
+      </p>
+      <div className="project-home__layout">
+        <ProjectWorkbenchHero
+          project={currentProject}
+          recentScene={workbench.recentScene}
+          recentRoute={workbench.recentRoute}
+          summaryCards={workbench.summaryCards}
+          todoItems={workbench.todoItems}
+          routeSummaries={workbench.routeSummaries}
+          onContinueWriting={handleContinueWriting}
+          onOpenGraph={handleOpenGraph}
+          onStartPreview={handleStartPreview}
+        />
+        <ProjectWorkbenchSidebar
+          project={currentProject}
+          stats={workbench.stats}
+          routes={sortedRoutes}
+          sceneCountByRoute={sceneCountByRoute}
+          availableScenes={workbench.mergedScenes}
+          projectLinks={projectLinks}
+          projectVariables={projectVariables}
+          editorScenes={editorScenes}
+          characters={characters}
+          loreEntries={loreEntries}
+          onCreateRoute={createRoute}
+          onRenameRoute={renameRoute}
+          onImport={importProject}
+        />
+      </div>
     </section>
   );
 }

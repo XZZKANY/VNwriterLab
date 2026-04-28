@@ -1,21 +1,15 @@
 import { useState } from "react";
-import type { Scene } from "@/lib/domain/scene";
+import { WorkspacePageHeader } from "@/app/components/workspace/WorkspacePageHeader";
+import { WorkspacePanel } from "@/app/components/workspace/WorkspacePanel";
 import { parseChoiceBlockMeta } from "@/features/editor/store/choiceBlock";
 import { useEditorStore } from "@/features/editor/store/useEditorStore";
+import { resolveStartScene } from "@/features/projects/lib/projectWorkbench";
 import {
   applyChoiceEffect,
   canEnterScene,
   resolveNextSceneId,
   resolveVisibleBlocks,
 } from "../lib/previewEngine";
-
-function resolveStartScene(scenes: Scene[]) {
-  return (
-    scenes.find((scene) => scene.isStartScene) ??
-    [...scenes].sort((left, right) => left.sortOrder - right.sortOrder)[0] ??
-    null
-  );
-}
 
 export function PreviewPage() {
   const scenes = useEditorStore((state) => state.scenes);
@@ -77,9 +71,16 @@ export function PreviewPage() {
   }
 
   return (
-    <section>
-      <h2>预览</h2>
-      <div>
+    <section className="preview-page">
+      <WorkspacePageHeader
+        title="预览"
+        description="从开头或当前节点开始，检查剧情阅读体验。"
+      />
+      <div
+        className="preview-page__toolbar"
+        role="toolbar"
+        aria-label="预览工具栏"
+      >
         <button type="button" onClick={startFromBeginning}>
           从开头预览
         </button>
@@ -87,8 +88,10 @@ export function PreviewPage() {
           从当前节点预览
         </button>
       </div>
-      <article>
-        <h3>{currentScene?.title ?? "当前场景"}</h3>
+      <WorkspacePanel
+        title={currentScene?.title ?? "当前场景"}
+        ariaLabel="预览主区"
+      >
         {entryBlockedMessage ? <p>{entryBlockedMessage}</p> : null}
         {currentScene ? (
           <div>
@@ -133,7 +136,7 @@ export function PreviewPage() {
         ) : (
           <p>请选择“从开头预览”或“从当前节点预览”开始体验剧情。</p>
         )}
-      </article>
+      </WorkspacePanel>
     </section>
   );
 }

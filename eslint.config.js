@@ -12,6 +12,7 @@ export default tseslint.config(
       "node_modules/**",
       "src-tauri/**",
       ".worktrees/**",
+      ".claude/**",
       "build/**",
       "scripts/**",
       "*.config.ts",

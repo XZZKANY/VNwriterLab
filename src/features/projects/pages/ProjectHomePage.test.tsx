@@ -79,6 +79,47 @@ describe("ProjectHomePage", () => {
     cleanup();
   });
 
+  it("存在项目时会显示工作台总览、待处理事项与统计侧栏", () => {
+    const startScene = createScene({
+      id: "scene-1",
+      title: "序章",
+      summary: "故事开场。",
+      sortOrder: 0,
+      isStartScene: true,
+    });
+    const revisionScene = createScene({
+      id: "scene-2",
+      title: "旧校舍入口",
+      summary: "需要修改。",
+      sortOrder: 1,
+      status: "needs_revision",
+      isStartScene: false,
+    });
+
+    useProjectStore.setState({
+      currentProject: createProject([startScene, revisionScene]),
+    });
+    useEditorStore.setState({
+      scenes: [startScene, revisionScene],
+      selectedSceneId: revisionScene.id,
+      links: [],
+      variables: [],
+      selectedVariableId: null,
+    });
+
+    render(<ProjectHomePage />);
+
+    expect(
+      screen.getByRole("heading", { name: "项目工作台" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "继续写作" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("待处理事项")).toBeInTheDocument();
+    expect(screen.getByText("项目统计")).toBeInTheDocument();
+    expect(screen.getAllByText(/场景总数/).length).toBeGreaterThan(0);
+  });
+
   it("会展示最近编辑并提供继续写作、打开分支图、从头预览入口", async () => {
     const user = userEvent.setup();
     const startScene = createScene({

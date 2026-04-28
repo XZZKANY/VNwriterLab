@@ -1,4 +1,6 @@
 import { useEffect } from "react";
+import { WorkspacePageHeader } from "@/app/components/workspace/WorkspacePageHeader";
+import { WorkspacePanel } from "@/app/components/workspace/WorkspacePanel";
 import { useProjectStore } from "@/features/projects/store/useProjectStore";
 import { LoreDetailForm } from "../components/LoreDetailForm";
 import { LoreSceneAssociationList } from "../components/LoreSceneAssociationList";
@@ -32,25 +34,33 @@ export function LorePage() {
     }
   }, [currentProject, projectEntries.length, hydrateLoreEntries]);
 
+  function handleCreateLore() {
+    if (currentProject) {
+      createLoreEntry(currentProject.id);
+    }
+  }
+
   return (
-    <section>
-      <h2>设定</h2>
-      <button
-        type="button"
-        onClick={() => {
-          if (currentProject) {
-            createLoreEntry(currentProject.id);
-          }
+    <section className="lore-page">
+      <WorkspacePageHeader
+        title="设定"
+        description="整理世界观资料，并查看与场景的基础关联。"
+        primaryAction={{
+          label: "新建设定",
+          onClick: handleCreateLore,
+          disabled: !currentProject,
         }}
-      >
-        新建设定
-      </button>
+      />
       {!currentProject ? (
-        <p>请先创建项目，再开始整理设定资料。</p>
+        <WorkspacePanel
+          title="设定资料"
+          description="请先创建项目，再开始整理设定资料。"
+        >
+          <p>请先创建项目，再开始整理设定资料。</p>
+        </WorkspacePanel>
       ) : (
-        <div className="layout-split layout-split--narrow">
-          <aside>
-            <h3>设定列表</h3>
+        <div className="resource-page__layout">
+          <WorkspacePanel title="设定列表" ariaLabel="设定列表">
             <ul>
               {projectEntries.map((entry) => (
                 <li key={entry.id}>
@@ -64,21 +74,24 @@ export function LorePage() {
                 </li>
               ))}
             </ul>
-          </aside>
-          <article>
-            <h3>设定详情</h3>
+          </WorkspacePanel>
+          <WorkspacePanel title="设定详情" ariaLabel="设定详情">
             {selectedEntry ? (
-              <>
-                <LoreDetailForm
-                  entry={selectedEntry}
-                  onUpdate={(input) => updateLoreEntry(selectedEntry.id, input)}
-                />
-                <LoreSceneAssociationList associations={relatedScenes} />
-              </>
+              <LoreDetailForm
+                entry={selectedEntry}
+                onUpdate={(input) => updateLoreEntry(selectedEntry.id, input)}
+              />
             ) : (
               <p>点击“新建设定”开始整理世界观资料。</p>
             )}
-          </article>
+          </WorkspacePanel>
+          <WorkspacePanel title="设定辅助信息" ariaLabel="设定辅助信息">
+            {selectedEntry ? (
+              <LoreSceneAssociationList associations={relatedScenes} />
+            ) : (
+              <p>选中设定后会显示场景关联信息。</p>
+            )}
+          </WorkspacePanel>
         </div>
       )}
     </section>

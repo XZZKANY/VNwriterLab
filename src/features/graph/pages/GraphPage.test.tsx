@@ -39,6 +39,17 @@ describe("GraphPage", () => {
     expect(screen.getByLabelText("只看问题节点")).toBeInTheDocument();
   });
 
+  it("会显示筛选区、画布区和节点详情区", () => {
+    renderGraphPage();
+
+    expect(
+      screen.getByRole("region", { name: "图谱筛选" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "图谱详情" }),
+    ).toBeInTheDocument();
+  });
+
   it("显示条件摘要并提供返回编辑入口", async () => {
     const user = userEvent.setup();
 
@@ -655,6 +666,8 @@ describe("GraphPage", () => {
     });
 
     renderGraphPage();
+
+    await user.click(screen.getByRole("tab", { name: /^问题明细/ }));
 
     const issueSummary = screen.getByRole("region", {
       name: "问题明细",

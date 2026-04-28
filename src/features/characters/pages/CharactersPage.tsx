@@ -1,4 +1,6 @@
 import { useEffect } from "react";
+import { WorkspacePageHeader } from "@/app/components/workspace/WorkspacePageHeader";
+import { WorkspacePanel } from "@/app/components/workspace/WorkspacePanel";
 import { useProjectStore } from "@/features/projects/store/useProjectStore";
 import { useEditorStore } from "@/features/editor/store/useEditorStore";
 import { CharacterDetailForm } from "../components/CharacterDetailForm";
@@ -54,25 +56,33 @@ export function CharactersPage() {
     }
   }, [currentProject, projectCharacters.length, hydrateCharacters]);
 
+  function handleCreateCharacter() {
+    if (currentProject) {
+      createCharacter(currentProject.id);
+    }
+  }
+
   return (
-    <section>
-      <h2>角色</h2>
-      <button
-        type="button"
-        onClick={() => {
-          if (currentProject) {
-            createCharacter(currentProject.id);
-          }
+    <section className="characters-page">
+      <WorkspacePageHeader
+        title="角色"
+        description="集中管理角色列表、详情与场景关联。"
+        primaryAction={{
+          label: "新增角色",
+          onClick: handleCreateCharacter,
+          disabled: !currentProject,
         }}
-      >
-        新增角色
-      </button>
+      />
       {!currentProject ? (
-        <p>请先创建项目，再开始整理角色资料。</p>
+        <WorkspacePanel
+          title="角色资料"
+          description="请先创建项目，再开始整理角色资料。"
+        >
+          <p>请先创建项目，再开始整理角色资料。</p>
+        </WorkspacePanel>
       ) : (
-        <div className="layout-split layout-split--narrow">
-          <aside>
-            <h3>角色列表</h3>
+        <div className="resource-page__layout">
+          <WorkspacePanel title="角色列表" ariaLabel="角色列表">
             <ul>
               {projectCharacters.map((character) => (
                 <li key={character.id}>
@@ -86,24 +96,29 @@ export function CharactersPage() {
                 </li>
               ))}
             </ul>
-          </aside>
-          <article>
-            <h3>角色详情</h3>
+          </WorkspacePanel>
+          <WorkspacePanel title="角色详情" ariaLabel="角色详情">
+            {selectedCharacter ? (
+              <CharacterDetailForm
+                character={selectedCharacter}
+                onUpdate={(input) =>
+                  updateCharacter(selectedCharacter.id, input)
+                }
+              />
+            ) : (
+              <p>点击“新增角色”开始整理角色资料。</p>
+            )}
+          </WorkspacePanel>
+          <WorkspacePanel title="角色辅助信息" ariaLabel="角色辅助信息">
             {selectedCharacter ? (
               <>
-                <CharacterDetailForm
-                  character={selectedCharacter}
-                  onUpdate={(input) =>
-                    updateCharacter(selectedCharacter.id, input)
-                  }
-                />
                 <CharacterRouteSummary summary={routeSummary} />
                 <CharacterSceneReferenceList references={sceneReferences} />
               </>
             ) : (
-              <p>点击“新增角色”开始整理角色资料。</p>
+              <p>选中角色后会显示路线与场景引用。</p>
             )}
-          </article>
+          </WorkspacePanel>
         </div>
       )}
     </section>

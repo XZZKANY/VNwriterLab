@@ -27,6 +27,15 @@ export function SceneMetadataForm({ scene, onUpdate }: SceneMetadataFormProps) {
         />
       </label>
       <label>
+        章节标签
+        <input
+          aria-label="章节标签"
+          value={scene.chapterLabel}
+          onChange={(event) => onUpdate({ chapterLabel: event.target.value })}
+          placeholder="例如：第一章 / Day 03 / 序章"
+        />
+      </label>
+      <label>
         场景类型
         <select
           aria-label="场景类型"
@@ -84,6 +93,15 @@ export function SceneMetadataForm({ scene, onUpdate }: SceneMetadataFormProps) {
           }
         />
         是否结局场景
+      </label>
+      <label>
+        作者笔记
+        <textarea
+          aria-label="场景笔记"
+          value={scene.notes}
+          onChange={(event) => onUpdate({ notes: event.target.value })}
+          placeholder="不会出现在正文里，仅作者可见"
+        />
       </label>
     </article>
   );

@@ -1,4 +1,10 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { useEditorStore } from "@/features/editor/store/useEditorStore";
@@ -65,6 +71,7 @@ describe("GraphPage issue categories", () => {
       </MemoryRouter>,
     );
 
+    fireEvent.click(screen.getByRole("tab", { name: /^问题明细/ }));
     const issueSummary = screen.getByRole("region", { name: "问题明细" });
 
     expect(within(issueSummary).getByText("空白场景")).toBeInTheDocument();
@@ -152,6 +159,7 @@ describe("GraphPage issue categories", () => {
       </MemoryRouter>,
     );
 
+    fireEvent.click(screen.getByRole("tab", { name: /^问题明细/ }));
     const issueSummary = screen.getByRole("region", { name: "问题明细" });
 
     expect(within(issueSummary).getByText("待补正文场景")).toBeInTheDocument();

@@ -40,6 +40,13 @@ export function CharacterDetailForm({
         />
       </label>
       <label>
+        外貌
+        <textarea
+          value={character.appearance}
+          onChange={(event) => onUpdate({ appearance: event.target.value })}
+        />
+      </label>
+      <label>
         性格
         <textarea
           value={character.personality}
@@ -58,6 +65,13 @@ export function CharacterDetailForm({
         <textarea
           value={character.secret}
           onChange={(event) => onUpdate({ secret: event.target.value })}
+        />
+      </label>
+      <label>
+        作者笔记
+        <textarea
+          value={character.notes}
+          onChange={(event) => onUpdate({ notes: event.target.value })}
         />
       </label>
     </>

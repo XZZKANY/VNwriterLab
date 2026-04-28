@@ -13,6 +13,8 @@ export type EditorSceneUpdateInput = Partial<
     | "summary"
     | "sceneType"
     | "status"
+    | "chapterLabel"
+    | "notes"
     | "isStartScene"
     | "isEndingScene"
   >

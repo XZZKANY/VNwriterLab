@@ -28,6 +28,25 @@ describe("ViewsPage", () => {
     useEditorStore.getState().resetEditor();
   });
 
+  it("会显示大纲、状态、路线三个视图切换", () => {
+    useProjectStore.setState({
+      currentProject: {
+        id: "p1",
+        name: "雨夜回响",
+        summary: "",
+        projectType: "route_based",
+        routes: [],
+        scenes: [],
+      },
+    });
+
+    render(<ViewsPage />);
+
+    expect(screen.getByRole("tab", { name: "大纲" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "状态" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "路线" })).toBeInTheDocument();
+  });
+
   it("会显示大纲视图并支持返回编辑", async () => {
     const user = userEvent.setup();
     useProjectStore.setState({

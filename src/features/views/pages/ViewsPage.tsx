@@ -1,7 +1,25 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { WorkspacePageHeader } from "@/app/components/workspace/WorkspacePageHeader";
+import { WorkspacePanel } from "@/app/components/workspace/WorkspacePanel";
 import { useEditorStore } from "@/features/editor/store/useEditorStore";
 import { useProjectStore } from "@/features/projects/store/useProjectStore";
-import { buildOutlineView } from "../lib/outlineView";
+import { OutlineView } from "../components/OutlineView";
+import { RouteView } from "../components/RouteView";
+import { StatusView } from "../components/StatusView";
+import { ViewsSummary } from "../components/ViewsSummary";
+import {
+  buildViewsDashboard,
+  type ViewsDashboard,
+} from "../lib/viewsDashboard";
+
+type ViewMode = "outline" | "status" | "route";
+
+const TABS: Array<{ id: ViewMode; label: string }> = [
+  { id: "outline", label: "大纲" },
+  { id: "status", label: "状态" },
+  { id: "route", label: "路线" },
+];
 
 export function ViewsPage() {
   const navigate = useNavigate();
@@ -9,11 +27,15 @@ export function ViewsPage() {
   const scenes = useEditorStore((state) => state.scenes);
   const links = useEditorStore((state) => state.links);
   const selectScene = useEditorStore((state) => state.selectScene);
+  const [activeView, setActiveView] = useState<ViewMode>("outline");
 
   if (!currentProject) {
     return (
-      <section>
-        <h2>多视图</h2>
+      <section className="views-page">
+        <WorkspacePageHeader
+          title="多视图"
+          description="从大纲、状态、路线三个角度观察项目结构。"
+        />
         <p>请先创建项目。</p>
       </section>
     );
@@ -25,54 +47,86 @@ export function ViewsPage() {
   const projectLinks = links.filter(
     (link) => link.projectId === currentProject.id,
   );
-  const sections = buildOutlineView(
-    currentProject.routes,
-    projectScenes,
-    projectLinks,
-  );
+  const dashboard = buildViewsDashboard({
+    routes: currentProject.routes,
+    scenes: projectScenes,
+    links: projectLinks,
+  });
+
+  function openScene(sceneId: string) {
+    selectScene(sceneId);
+    navigate("/editor");
+  }
 
   return (
-    <section>
-      <h2>多视图</h2>
-      <h3>大纲视图</h3>
-      {sections.length > 0 ? (
-        <ul>
-          {sections.map((section) => (
-            <li key={section.routeId}>
-              <h4>{section.routeName}</h4>
-              {section.scenes.length > 0 ? (
-                <ol>
-                  {section.scenes.map((scene) => (
-                    <li key={scene.sceneId}>
-                      <strong>{scene.title}</strong>
-                      <span>
-                        {" "}
-                        （入边 {scene.incomingCount} / 出边{" "}
-                        {scene.outgoingCount}）
-                      </span>
-                      {scene.isStartScene ? <span> [起始]</span> : null}
-                      {scene.isEndingScene ? <span> [结局]</span> : null}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          selectScene(scene.sceneId);
-                          navigate("/editor");
-                        }}
-                      >
-                        返回编辑：{scene.title}
-                      </button>
-                    </li>
-                  ))}
-                </ol>
-              ) : (
-                <p>当前路线暂无场景。</p>
-              )}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p>暂无路线，创建路线后会显示大纲。</p>
-      )}
+    <section className="views-page">
+      <WorkspacePageHeader
+        title="多视图"
+        description="从大纲、状态、路线三个角度观察项目结构。"
+        primaryAction={{
+          label: "继续写作",
+          onClick: () => navigate("/editor"),
+        }}
+      />
+      <div
+        className="views-page__switcher"
+        role="tablist"
+        aria-label="视图切换"
+      >
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={activeView === tab.id}
+            className={
+              activeView === tab.id
+                ? "views-page__tab is-active"
+                : "views-page__tab"
+            }
+            onClick={() => setActiveView(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      <div className="views-page__layout">
+        <WorkspacePanel title="视图内容" ariaLabel="视图内容">
+          <ActiveView
+            view={activeView}
+            dashboard={dashboard}
+            onOpenScene={openScene}
+          />
+        </WorkspacePanel>
+        <WorkspacePanel title="当前摘要" ariaLabel="当前摘要">
+          <ViewsSummary view={activeView} dashboard={dashboard} />
+        </WorkspacePanel>
+      </div>
     </section>
   );
+}
+
+interface ActiveViewProps {
+  view: ViewMode;
+  dashboard: ViewsDashboard;
+  onOpenScene: (sceneId: string) => void;
+}
+
+function ActiveView({ view, dashboard, onOpenScene }: ActiveViewProps) {
+  if (view === "outline") {
+    return (
+      <OutlineView
+        sections={dashboard.outlineSections}
+        onOpenScene={onOpenScene}
+      />
+    );
+  }
+
+  if (view === "status") {
+    return (
+      <StatusView cards={dashboard.statusCards} onOpenScene={onOpenScene} />
+    );
+  }
+
+  return <RouteView cards={dashboard.routeCards} onOpenScene={onOpenScene} />;
 }

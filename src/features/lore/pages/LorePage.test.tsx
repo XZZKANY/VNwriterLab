@@ -122,6 +122,22 @@ describe("LorePage", () => {
     ).toBeInTheDocument();
   });
 
+  it("存在项目时会展示设定列表、设定详情和设定辅助信息三栏", () => {
+    useProjectStore.getState().createProject("雨夜回响", "一段校园悬疑故事");
+
+    render(<LorePage />);
+
+    expect(
+      screen.getByRole("region", { name: "设定列表" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "设定详情" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "设定辅助信息" }),
+    ).toBeInTheDocument();
+  });
+
   it("存在项目时允许新建设定并在列表中显示", async () => {
     const user = userEvent.setup();
 
@@ -133,6 +149,24 @@ describe("LorePage", () => {
 
     expect(screen.getByText("未命名设定 1")).toBeInTheDocument();
     expect(screen.getByLabelText("名称")).toHaveValue("未命名设定 1");
+  });
+
+  it("设定详情表单包含标签字段，并按中英文逗号切分", async () => {
+    const user = userEvent.setup();
+
+    useProjectStore.getState().createProject("雨夜回响", "一段校园悬疑故事");
+
+    render(<LorePage />);
+
+    await user.click(screen.getByRole("button", { name: "新建设定" }));
+    await user.type(screen.getByLabelText("标签"), "地点，回忆,雨夜");
+
+    const { useLoreStore } = await import("../store/useLoreStore");
+    expect(useLoreStore.getState().entries[0]?.tags).toEqual([
+      "地点",
+      "回忆",
+      "雨夜",
+    ]);
   });
 
   it("选择设定后允许编辑设定详情", async () => {

@@ -1,6 +1,17 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  render as rtlRender,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
+import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+function render(ui: ReactElement) {
+  return rtlRender(<MemoryRouter>{ui}</MemoryRouter>);
+}
 import type { SceneBlock } from "@/lib/domain/block";
 import type { Scene } from "@/lib/domain/scene";
 import type { ProjectVariable } from "@/lib/domain/variable";
@@ -98,6 +109,31 @@ describe("EditorPage", () => {
     resetReferenceRepositoryForTesting();
     resetStoryRepositoryForTesting();
     cleanup();
+  });
+
+  it("存在项目时会显示场景结构、场景内容和场景设置三栏", async () => {
+    const user = userEvent.setup();
+
+    useProjectStore.getState().createProject("雨夜回响", "一段校园悬疑故事");
+
+    render(<EditorPage />);
+
+    await user.click(
+      screen.getAllByRole("button", { name: "在此路线新建场景" })[0]!,
+    );
+
+    expect(
+      screen.getByRole("region", { name: "场景结构" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "场景内容" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "场景设置" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "新增变量" }),
+    ).toBeInTheDocument();
   });
 
   it("允许创建场景并追加旁白块", async () => {
@@ -550,6 +586,35 @@ describe("EditorPage", () => {
     expect(useEditorStore.getState().scenes[0]?.blocks).toHaveLength(1);
     expect(useEditorStore.getState().scenes[0]?.blocks[0]?.contentText).toBe(
       "雨夜里传来脚步声。",
+    );
+  });
+
+  it("场景元信息表单包含章节标签与作者笔记", async () => {
+    const user = userEvent.setup();
+
+    useProjectStore.getState().createProject("雨夜回响", "一段校园悬疑故事。");
+    const project = useProjectStore.getState().currentProject!;
+    const routeId = project.routes[0]!.id;
+    const scene = useProjectStore.getState().createSceneInRoute(routeId)!;
+    useEditorStore.getState().importScene(scene);
+    useEditorStore.getState().selectScene(scene.id);
+
+    render(<EditorPage />);
+
+    await user.type(screen.getByLabelText("章节标签"), "第一章");
+    await user.type(
+      screen.getByLabelText("场景笔记"),
+      "这一段重点突出阴雨氛围",
+    );
+
+    expect(screen.getByLabelText("章节标签")).toHaveValue("第一章");
+    expect(screen.getByLabelText("场景笔记")).toHaveValue(
+      "这一段重点突出阴雨氛围",
+    );
+
+    expect(useEditorStore.getState().scenes[0]?.chapterLabel).toBe("第一章");
+    expect(useEditorStore.getState().scenes[0]?.notes).toBe(
+      "这一段重点突出阴雨氛围",
     );
   });
 

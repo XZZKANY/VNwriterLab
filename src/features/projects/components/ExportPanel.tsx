@@ -10,6 +10,7 @@ import {
   exportProjectAsJson,
   exportProjectAsPlainText,
 } from "../lib/projectExport";
+import { sanitizeProjectNameForFile } from "../lib/projectFileName";
 
 interface ExportPanelProps {
   project: Project;
@@ -51,29 +52,6 @@ const EXPORT_FORMATS = {
 } as const satisfies Record<string, ExportFormat>;
 
 type ExportFormatKey = keyof typeof EXPORT_FORMATS;
-
-/**
- * 把项目名归一化为合法文件名前缀：
- * - 去掉 Windows 下不允许出现在文件名里的字符 < > : " / \ | ? *
- * - 多个连续空白合一
- * - 去掉首尾空白与点（Windows 不允许文件名以点结尾）
- * - 空字符串退化为 "未命名项目"
- */
-function sanitizeProjectNameForFile(name: string): string {
-  const cleaned = name
-    .replace(/[<>:"/\\|?*]/g, "")
-    // 控制字符（ASCII 0x00-0x1f）—— 用单独的 char-code 过滤，避免在 regex
-    // 中嵌入控制字符触发 eslint no-control-regex
-    .split("")
-    .filter((ch) => ch.charCodeAt(0) >= 0x20)
-    .join("")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/^\.+|\.+$/g, "")
-    .slice(0, 64);
-
-  return cleaned || "未命名项目";
-}
 
 export function ExportPanel({
   project,

@@ -11,6 +11,25 @@ describe("PreviewPage", () => {
     cleanup();
   });
 
+  it("会显示统一工具栏和预览主区", () => {
+    useEditorStore.setState({
+      scenes: [],
+      links: [],
+      variables: [],
+      selectedSceneId: null,
+      selectedVariableId: null,
+    });
+
+    render(<PreviewPage />);
+
+    expect(
+      screen.getByRole("toolbar", { name: "预览工具栏" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "预览主区" }),
+    ).toBeInTheDocument();
+  });
+
   it("从开头预览后会展示起始场景并允许按选项跳转", async () => {
     const user = userEvent.setup();
 

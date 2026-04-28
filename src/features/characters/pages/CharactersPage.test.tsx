@@ -115,6 +115,22 @@ describe("CharactersPage", () => {
     ).toBeInTheDocument();
   });
 
+  it("存在项目时会展示角色列表、角色详情和角色辅助信息三栏", () => {
+    useProjectStore.getState().createProject("雨夜回响", "一段校园悬疑故事");
+
+    render(<CharactersPage />);
+
+    expect(
+      screen.getByRole("region", { name: "角色列表" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "角色详情" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "角色辅助信息" }),
+    ).toBeInTheDocument();
+  });
+
   it("存在项目时允许新增角色并在列表中显示", async () => {
     const user = userEvent.setup();
 
@@ -126,6 +142,22 @@ describe("CharactersPage", () => {
 
     expect(screen.getByText("未命名角色 1")).toBeInTheDocument();
     expect(screen.getByLabelText("姓名")).toHaveValue("未命名角色 1");
+  });
+
+  it("角色详情表单包含外貌与作者笔记字段", async () => {
+    const user = userEvent.setup();
+
+    useProjectStore.getState().createProject("雨夜回响", "一段校园悬疑故事");
+
+    render(<CharactersPage />);
+
+    await user.click(screen.getByRole("button", { name: "新增角色" }));
+
+    await user.type(screen.getByLabelText("外貌"), "黑色长发，常年穿校服");
+    await user.type(screen.getByLabelText("作者笔记"), "出场频率较高");
+
+    expect(screen.getByLabelText("外貌")).toHaveValue("黑色长发，常年穿校服");
+    expect(screen.getByLabelText("作者笔记")).toHaveValue("出场频率较高");
   });
 
   it("选择角色后允许编辑角色详情", async () => {

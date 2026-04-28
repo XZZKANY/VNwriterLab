@@ -23,6 +23,8 @@ export type ProjectSceneUpdateInput = Partial<
     | "summary"
     | "sceneType"
     | "status"
+    | "chapterLabel"
+    | "notes"
     | "isStartScene"
     | "isEndingScene"
   >

@@ -37,6 +37,20 @@ export interface SceneGraphNodeData {
   routeId: string;
   isStartScene: boolean;
   isEndingScene: boolean;
+  /** 仅在 buildSceneGraph 接收 routes 时填充 */
+  routeName?: string;
+  sceneType?: "normal" | "branch" | "ending";
+  status?:
+    | "draft"
+    | "completed"
+    | "needs_revision"
+    | "needs_supplement"
+    | "needs_logic_check";
+  statusLabel?: string;
+  hasIssue?: boolean;
+  blockCount?: number;
+  incomingCount?: number;
+  outgoingCount?: number;
 }
 
 export interface SceneGraphViewFilters {
